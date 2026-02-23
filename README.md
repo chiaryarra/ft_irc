@@ -3,7 +3,6 @@
 ## Integrants
 - chiaryarra
 - hebaja
-- 
 
 ## Objective
 Making a implementation of a IRC server following RFC 1459 standards.
@@ -12,4 +11,4 @@ Making a implementation of a IRC server following RFC 1459 standards.
 make
 
 ## Execution
-./ircserv <port> <password>
+./ircserv [port] [password]
