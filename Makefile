@@ -1,10 +1,10 @@
-NAME = easyfind
+NAME = ircserv
 
 CPP = c++
 
 FLAGS = -Wall -Werror -Wextra -std=c++98
 
-SRCS = main.cpp
+SRCS = src/general/main.cpp src/server/Server.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
