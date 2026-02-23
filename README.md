@@ -11,4 +11,4 @@ Making a implementation of a IRC server.
 make
 
 ## Execution
-./ircserv [port] [password]
+`./ircserv <port> <password>`
