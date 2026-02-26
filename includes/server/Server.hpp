@@ -24,8 +24,10 @@ private:
     void    setupServerAddress();
     void    setupListen();
     void    setupSocket();
+    void    setupNonBlocking();
+    void    setupServerPoll();
     void    setupPolling();
-    void    run();
+    void    runPollLoop();
 public:
     // Constructors
     Server(int port, const std::string& password);
