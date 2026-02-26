@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <cstring>
 #include <arpa/inet.h>
+#include <iostream>
 
 Server::Server(int port, const std::string &password) {
     _port = port;
@@ -79,15 +80,21 @@ void    Server::runPollLoop() {
     while (true)
     {
         int ready = poll(_pollFds.data(),_pollFds.size(), -1);
-
         if (ready < 0)
             throw std::runtime_error("Poll execution failed");
         for (size_t i = 0; i < _pollFds.size(); i++)
         {
-            if (_pollFds[i].revents == POLLIN)
+            if (_pollFds[i].revents == 0)
+                continue;
+            if (_pollFds[i].revents & POLLIN)
             {
                 if (_pollFds[i].fd == _serverSocketFd)
-                    ; // Accept new client
+                {
+                    // Accept new client
+                    int clientFd = accept(_serverSocketFd, NULL, NULL);
+                    if (clientFd >= 0)
+                        close(clientFd);
+                }
                 else
                     ; // Receive data from client
             }
