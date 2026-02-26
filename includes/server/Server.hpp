@@ -20,6 +20,9 @@ private:
     std::vector<pollfd> _pollFds;
 
     // Server private methods
+    void    setupSocketOpts();
+    void    setupServerAddress();
+    void    setupListen();
     void    setupSocket();
     void    setupPolling();
     void    run();
