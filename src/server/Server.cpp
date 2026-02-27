@@ -96,7 +96,9 @@ void    Server::runPollLoop() {
                         close(clientFd);
                 }
                 else
+                {
                     ; // Receive data from client
+                }
             }
         }
     }
