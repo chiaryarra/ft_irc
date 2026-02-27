@@ -1,4 +1,5 @@
 #include "../../includes/server/Server.hpp"
+#include "../../includes/client/Client.hpp"
 #include <sys/socket.h>
 #include <stdexcept>
 #include <unistd.h>
@@ -93,7 +94,7 @@ void    Server::runPollLoop() {
                     // Accept new client
                     int clientFd = accept(_serverSocketFd, NULL, NULL);
                     if (clientFd >= 0)
-                        close(clientFd);
+                        _clients.insert(std::make_pair(clientFd, Client(clientFd)));
                 }
                 else
                 {

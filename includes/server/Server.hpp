@@ -16,7 +16,7 @@ private:
     std::string _password;
     int _serverSocketFd;
     bool    _running;
-    std::map<int, Client*>  _clients; 
+    std::map<int, Client>  _clients; 
     std::vector<pollfd> _pollFds;
 
     // Server private methods
