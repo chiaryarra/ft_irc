@@ -1,0 +1,31 @@
+name: C++ CI
+
+on:
+  pull_request:
+    branches: [ dev ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential valgrind
+
+      - name: Build
+        run: make
+
+      - name: Run server test
+        run: |
+          ./ircserv 6667 test &
+          sleep 1
+          nc -z localhost 6667
+          kill %1
+
+      - name: Check memory leaks
+        run: |
+          valgrind --leak-check=full --error-exitcode=1 ./ircserv 6667 test &
+          sleep 1
+          kill %1

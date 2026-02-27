@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <cstring>
 #include <arpa/inet.h>
+#include <iostream>
 
 Server::Server(int port, const std::string &password) {
     _port = port;
@@ -47,14 +48,64 @@ void    Server::setupListen() {
 void    Server::setupSocket() {
     _serverSocketFd = socket(AF_INET, SOCK_STREAM, 0);
     if (_serverSocketFd < 0)
-        throw   std::runtime_error("Failed to create socket");
+    throw   std::runtime_error("Failed to create socket");
     setupSocketOpts();
     setupServerAddress();
     setupListen();
 }
 
+void    Server::setupNonBlocking() {
+    int flags = fcntl(_serverSocketFd, F_GETFL, 0);
+    if (flags < 0)
+        throw   std::runtime_error("Failed to get socket fd flags");
+    if (fcntl(_serverSocketFd, F_SETFL,  flags | O_NONBLOCK) < 0)
+        throw   std::runtime_error("Failed to set Non blocking on socket fd");
+}
+
+void    Server::setupServerPoll() {
+    pollfd  serverPoll;
+
+    serverPoll.fd = _serverSocketFd;
+    serverPoll.events = POLLIN;
+    serverPoll.revents = 0;
+    _pollFds.push_back(serverPoll);
+}
+
+void    Server::setupPolling() {
+    setupNonBlocking();
+    setupServerPoll();
+}
+
+void    Server::runPollLoop() {
+    while (true)
+    {
+        int ready = poll(_pollFds.data(),_pollFds.size(), -1);
+        if (ready < 0)
+            throw std::runtime_error("Poll execution failed");
+        for (size_t i = 0; i < _pollFds.size(); i++)
+        {
+            if (_pollFds[i].revents == 0)
+                continue;
+            if (_pollFds[i].revents & POLLIN)
+            {
+                if (_pollFds[i].fd == _serverSocketFd)
+                {
+                    // Accept new client
+                    int clientFd = accept(_serverSocketFd, NULL, NULL);
+                    if (clientFd >= 0)
+                        close(clientFd);
+                }
+                else
+                {
+                    ; // Receive data from client
+                }
+            }
+        }
+    }
+}
+
 void    Server::start() {
     setupSocket();
-    //setupPolling();
-    //run();
+    setupPolling();
+    runPollLoop();
 }
