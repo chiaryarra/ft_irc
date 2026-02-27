@@ -19,13 +19,13 @@ jobs:
 
       - name: Run server test
         run: |
-          ./ircserver 6667 test &
+          ./ircserv 6667 test &
           sleep 1
           nc -z localhost 6667
           kill %1
 
       - name: Check memory leaks
         run: |
-          valgrind --leak-check=full --error-exitcode=1 ./ircserver 6667 test &
+          valgrind --leak-check=full --error-exitcode=1 ./ircserv 6667 test &
           sleep 1
           kill %1
