@@ -101,6 +101,57 @@ void    Server::handleNewConnection() {
     }
 }
 
+void    Server::processClientBuffer(Client &client)
+{
+    std::string &buf = client.getInputBuffer();
+    size_t pos;
+
+    while ((pos = buf.find("\n")) != std::string::npos)
+    {
+        std::string message = buf.substr(0, pos);
+        buf.erase(0, pos + 1);
+        std::cout << "Received command: " << message << std::endl;
+    }
+}
+
+void    Server::removeClient(int clientFd)
+{
+    close(clientFd);
+    _clients.erase(clientFd);
+    for (size_t i = 0; i < _pollFds.size(); i++)
+    {
+        if (_pollFds[i].fd == clientFd)
+        {
+            _pollFds.erase(_pollFds.begin() + i);
+            break;
+        }
+    }
+}
+
+void    Server::handleClientData(int clientFd)
+{
+    char    buffer[512];
+    ssize_t bytes = recv(clientFd, buffer, sizeof(buffer), 0);
+
+    if (bytes > 0)
+        buffer[bytes] = '\0';
+    else if (bytes == 0)
+    {
+        std::cout << "Client disconnected\n";
+        removeClient(clientFd);
+        return ;
+    }
+    std::map<int, Client>::iterator it = _clients.find(clientFd);
+    if (it == _clients.end())
+    {
+        std::cerr << "Client not found!" << std::endl;
+        return ;
+    }
+    Client &client = it->second;
+    client.getInputBuffer().append(buffer, bytes);
+    processClientBuffer(client);
+}
+
 void    Server::runPollLoop() {
     while (true)
     {
@@ -120,7 +171,8 @@ void    Server::runPollLoop() {
                 }
                 else
                 {
-                    ; // Receive data from client
+                    // Receive data from client
+                    handleClientData(_pollFds[i].fd);
                 }
             }
         }
