@@ -3,10 +3,7 @@
 
 Client::Client(int fd): _fd(fd), _nickname(""), _username(""), _inputBuffer(""), _isAuthenticated(false) {}
 
-Client::~Client() {
-    if (_fd >= 0)
-        close(_fd);
-}
+Client::~Client() {}
 
 int Client::getFd() const {
     return (_fd);

@@ -9,6 +9,7 @@
 #include <cstring>
 #include <arpa/inet.h>
 #include <iostream>
+#include <cerrno>
 
 Server::Server(int port, const std::string &password) {
     _port = port;
@@ -77,13 +78,36 @@ void    Server::setupPolling() {
     setupServerPoll();
 }
 
+void    Server::handleNewConnection() {
+    while (true)
+    {
+        int clientFd = accept(_serverSocketFd, NULL, NULL);
+        if (clientFd < 0)
+        {
+            if (errno == EWOULDBLOCK || errno == EAGAIN)
+                break;
+            else
+                throw std::runtime_error("Accept execution failed");
+        }
+        fcntl(clientFd, F_SETFL, O_NONBLOCK);
+        _clients.insert(std::make_pair(clientFd, Client(clientFd)));
+        pollfd clientPollFd;
+        clientPollFd.fd = clientFd;
+        clientPollFd.events = POLLIN;
+        clientPollFd.revents = 0;
+        _pollFds.push_back(clientPollFd);
+
+        std::cout << "New client Connected: FD " << clientFd << std::endl;
+    }
+}
+
 void    Server::runPollLoop() {
     while (true)
     {
         int ready = poll(_pollFds.data(),_pollFds.size(), -1);
         if (ready < 0)
             throw std::runtime_error("Poll execution failed");
-        for (size_t i = 0; i < _pollFds.size(); i++)
+        for (size_t i = 0; i < _pollFds.size() && ready > 0; i++)
         {
             if (_pollFds[i].revents == 0)
                 continue;
@@ -92,9 +116,7 @@ void    Server::runPollLoop() {
                 if (_pollFds[i].fd == _serverSocketFd)
                 {
                     // Accept new client
-                    int clientFd = accept(_serverSocketFd, NULL, NULL);
-                    if (clientFd >= 0)
-                        _clients.insert(std::make_pair(clientFd, Client(clientFd)));
+                    handleNewConnection();
                 }
                 else
                 {

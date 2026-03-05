@@ -28,6 +28,7 @@ private:
     void    setupServerPoll();
     void    setupPolling();
     void    runPollLoop();
+    void    handleNewConnection();
 public:
     // Constructors
     Server(int port, const std::string& password);
