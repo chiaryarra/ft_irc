@@ -29,6 +29,9 @@ private:
     void    setupPolling();
     void    runPollLoop();
     void    handleNewConnection();
+    void    handleClientData(int clientFd);
+    void    processClientBuffer(Client &client);
+    void    removeClient(int clientFd);
 public:
     // Constructors
     Server(int port, const std::string& password);

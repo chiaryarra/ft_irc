@@ -17,7 +17,7 @@ const std::string& Client::getUsername() const {
     return (_username);
 }
 
-const std::string& Client::getInputBuffer() const {
+std::string& Client::getInputBuffer() {
     return (_inputBuffer);
 }
 
