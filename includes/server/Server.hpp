@@ -32,6 +32,7 @@ private:
     void    handleClientData(int clientFd);
     void    processClientBuffer(Client &client);
     void    removeClient(int clientFd);
+    void    sendMessage(int clientFd, const std::string &message);
 public:
     // Constructors
     Server(int port, const std::string& password);

@@ -106,7 +106,7 @@ void    Server::processClientBuffer(Client &client)
     std::string &buf = client.getInputBuffer();
     size_t pos;
 
-    while ((pos = buf.find("\n")) != std::string::npos)
+    while ((pos = buf.find("\r\n")) != std::string::npos)
     {
         std::string message = buf.substr(0, pos);
         buf.erase(0, pos + 1);
@@ -126,6 +126,16 @@ void    Server::removeClient(int clientFd)
             break;
         }
     }
+}
+
+void    Server::sendMessage(int clientFd, const std::string &message)
+{
+    std::string formatted = message + "\r\n";
+    size_t bytes_send;
+
+    bytes_send = send(clientFd, formatted.c_str(), formatted.size(), 0);
+    if (bytes_send < 0)
+        std::cerr << "Send failed to client fd: " << clientFd << std::endl;
 }
 
 void    Server::handleClientData(int clientFd)
