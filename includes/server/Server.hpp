@@ -7,6 +7,7 @@
 #include <poll.h>
 
 class Client;
+class Channel;
 
 class Server
 {
@@ -18,6 +19,7 @@ private:
     bool    _running;
     std::map<int, Client>  _clients; 
     std::vector<pollfd> _pollFds;
+    std::map<std::string, Channel> _channels;
 
     // Server private methods
     void    setupSocketOpts();
@@ -33,6 +35,7 @@ private:
     void    processClientBuffer(Client &client);
     void    removeClient(int clientFd);
     void    sendMessage(int clientFd, const std::string &message);
+    void    broadcastToChannel(const std::string &channelName, const std::string &message, int excludeFd);
 public:
     // Constructors
     Server(int port, const std::string& password);

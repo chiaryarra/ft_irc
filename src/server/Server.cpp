@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include <cerrno>
+#include <set>
 
 Server::Server(int port, const std::string &password) {
     _port = port;
@@ -136,6 +137,21 @@ void    Server::sendMessage(int clientFd, const std::string &message)
     bytes_send = send(clientFd, formatted.c_str(), formatted.size(), 0);
     if (bytes_send < 0)
         std::cerr << "Send failed to client fd: " << clientFd << std::endl;
+}
+
+void    Server::broadcastToChannel(const std::string &channelName, const std::string &message, int excludeFd)
+{
+    std::map<std::string, Channel>::iterator it = _channels.find(channelName);
+
+    if (it == _channels.end())
+        return;
+    const std::set<int> &clients = it->second.getClients();
+    for (std::set<int>::const_iterator index = clients.begin(); index != clients.end(); ++index)
+    {
+        if (*index == excludeFd)
+            continue;
+        sendMessage(*index, message);
+    }
 }
 
 void    Server::handleClientData(int clientFd)
