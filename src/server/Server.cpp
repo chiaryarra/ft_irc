@@ -1,5 +1,6 @@
 #include "../../includes/server/Server.hpp"
 #include "../../includes/client/Client.hpp"
+#include <sstream>
 #include <sys/socket.h>
 #include <stdexcept>
 #include <unistd.h>
@@ -101,6 +102,17 @@ void    Server::handleNewConnection() {
     }
 }
 
+std::vector<std::string> split(const std::string message)
+{
+	std::vector<std::string>	res;
+	std::istringstream			iss(message);
+	std::string					word;
+
+	while (iss >> word)
+		res.push_back(word);
+	return (res);
+}
+
 void    Server::processClientBuffer(Client &client)
 {
     std::string &buf = client.getInputBuffer();
@@ -110,6 +122,37 @@ void    Server::processClientBuffer(Client &client)
     {
         std::string message = buf.substr(0, pos);
         buf.erase(0, pos + 1);
+
+		// if (message.substr(0, 4) == "PASS ")
+		// 	std::cout << "Password" << std::endl;
+		//
+		
+		std::cout << client.getNickname() << std::endl;
+
+		std::vector<std::string> split_msg = split(message);
+
+		if (split_msg.size() > 1)
+		{
+			if (split_msg[0].compare("PASS") == 0)
+			{
+				if (split_msg[1].empty())
+					std::cout << "Pass needed" << std::endl;
+				else	
+				{
+					if (split_msg[1].compare(_password) == 0)
+					{
+						std::cout << "Password accepted" << std::endl;
+						client.setIsAuthenticated(true);
+					}
+					else
+					{
+						std::cout << "Wrong password" << std::endl;
+						Server::removeClient(client.getFd());
+					}
+				}
+			}
+		}
+
         std::cout << "Received command: " << message << std::endl;
     }
 }
