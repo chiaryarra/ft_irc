@@ -125,8 +125,6 @@ void    Server::processClientBuffer(Client &client)
         buf.erase(0, pos + 1);
 		std::vector<std::string> split_msg = split(message);
         std::cout << "Received command: " << message << std::endl;
-
-
 		if (split_msg.size() > 1)
 		{
 			if (split_msg[0].compare("PASS") == 0)
