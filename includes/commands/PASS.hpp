@@ -1,5 +1,5 @@
-#ifndef UTILS_HPP
-#define UTILS_HPP
+#ifndef PASS_HPP
+#define PASS_HPP
 
 # include "../client/Client.hpp"
 # include <vector>

@@ -1,5 +1,6 @@
 #include "../../includes/server/Server.hpp"
 #include "../../includes/client/Client.hpp"
+#include "../../includes/utils/Utils.hpp"
 #include <sstream>
 #include <sys/socket.h>
 #include <stdexcept>
@@ -134,23 +135,8 @@ void    Server::processClientBuffer(Client &client)
 		if (split_msg.size() > 1)
 		{
 			if (split_msg[0].compare("PASS") == 0)
-			{
-				if (split_msg[1].empty())
-					std::cout << "Pass needed" << std::endl;
-				else	
-				{
-					if (split_msg[1].compare(_password) == 0)
-					{
-						std::cout << "Password accepted" << std::endl;
-						client.setIsAuthenticated(true);
-					}
-					else
-					{
-						std::cout << "Wrong password" << std::endl;
-						Server::removeClient(client.getFd());
-					}
-				}
-			}
+				if (!auth_pass(split_msg, client, _password))
+					Server::removeClient(client.getFd());
 		}
 
         std::cout << "Received command: " << message << std::endl;
