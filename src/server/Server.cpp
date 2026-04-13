@@ -123,23 +123,14 @@ void    Server::processClientBuffer(Client &client)
     {
         std::string message = buf.substr(0, pos);
         buf.erase(0, pos + 1);
-
-		// if (message.substr(0, 4) == "PASS ")
-		// 	std::cout << "Password" << std::endl;
-		//
-		
-		std::cout << client.getNickname() << std::endl;
-
 		std::vector<std::string> split_msg = split(message);
-
+        std::cout << "Received command: " << message << std::endl;
 		if (split_msg.size() > 1)
 		{
 			if (split_msg[0].compare("PASS") == 0)
 				if (!auth_pass(split_msg, client, _password))
 					Server::removeClient(client.getFd());
 		}
-
-        std::cout << "Received command: " << message << std::endl;
     }
 }
 

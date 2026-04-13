@@ -4,17 +4,17 @@
 
 bool	auth_pass(std::vector<std::string> split_msg, Client &client, std::string password)
 {
-	if (split_msg[1].empty())
-		std::cout << "Pass needed" << std::endl;
-	else	
+	if (client.getIsAuthenticated())
 	{
-		if (split_msg[1].compare(password) == 0)
-		{
-			std::cout << "Password accepted" << std::endl;
-			client.setIsAuthenticated(true);
-			return (true);
-		}
-			std::cout << "Wrong password" << std::endl;
+		std::cout << "Client already authenticated" << std::endl;
+		return (true);
 	}
+	else if (split_msg[1].compare(password) == 0)
+	{
+		std::cout << "Password accepted" << std::endl;
+		client.setIsAuthenticated(true);
+		return (true);
+	}
+		std::cout << "Wrong password" << std::endl;
 	return (false);
 }
