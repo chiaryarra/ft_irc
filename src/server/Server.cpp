@@ -116,7 +116,7 @@ std::vector<std::string> split(const std::string message)
 
 void    Server::processClientBuffer(Client &client)
 {
-    std::string &buf = client.getInputBuffer();
+	std::string &buf = client.getInputBuffer();
     size_t pos;
 
     while ((pos = buf.find("\n")) != std::string::npos)
@@ -130,6 +130,8 @@ void    Server::processClientBuffer(Client &client)
 			if (split_msg[0].compare("PASS") == 0)
 				if (!authPass(client, split_msg[1], _password))
 					Server::removeClient(client.getFd());
+			if (split_msg[0].compare("NICK") == 0)
+				setClientNick(split_msg[1], client);
 		}
     }
 }
