@@ -2,8 +2,8 @@
 #define UTILS_HPP
 
 # include "../client/Client.hpp"
-# include <vector>
+# include <string>
 
-bool	auth_pass(std::vector<std::string> split_msg, Client &client, std::string password);
+bool	authPass(Client &client, std::string password, std::string server_password);
 
 #endif

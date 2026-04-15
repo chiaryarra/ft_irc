@@ -128,7 +128,7 @@ void    Server::processClientBuffer(Client &client)
 		if (split_msg.size() > 1)
 		{
 			if (split_msg[0].compare("PASS") == 0)
-				if (!auth_pass(split_msg, client, _password))
+				if (!authPass(client, split_msg[1], _password))
 					Server::removeClient(client.getFd());
 		}
     }
