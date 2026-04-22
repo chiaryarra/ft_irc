@@ -144,6 +144,7 @@ void    Server::processClientBuffer(Client &client)
 				setClientNick(split_msg[1], client);
 			}
 		}
+		// TODO message if command has no parameters
     }
 }
 
