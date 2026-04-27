@@ -125,13 +125,26 @@ void    Server::processClientBuffer(Client &client)
         buf.erase(0, pos + 1);
 		std::vector<std::string> split_msg = split(message);
         std::cout << "Received command: " << message << std::endl;
+
+
 		if (split_msg.size() > 1)
 		{
 			if (split_msg[0].compare("PASS") == 0)
 				if (!authPass(client, split_msg[1], _password))
 					Server::removeClient(client.getFd());
 			if (split_msg[0].compare("NICK") == 0)
+			{
+				for (std::map<int, Client>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+				{
+					Client client = it->second;
+					if (client.getNickname().compare(split_msg[1]) == 0)
+					{
+						std::cout << "Nick " << split_msg[1] << " has already been registered. Choose another." << std::endl;
+						return ;
+					}
+				}
 				setClientNick(split_msg[1], client);
+			}
 		}
     }
 }
