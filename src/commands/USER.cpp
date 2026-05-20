@@ -3,7 +3,20 @@
 
 bool	parseUsername(std::string username)
 {
-	std::cout << username << std::endl;
+	size_t	found;
+
+	if (username.empty() || username.size() > 32)
+	{
+		std::cout << "Username empty or too large" << std::endl;
+		return (false);
+	}
+	found = username.find_first_of(" @!:\r\n\0"); 
+	if (found != std::string::npos)
+	{
+		std::cout << "Character " << username[found] << " is forbidden" << std::endl;
+		return false;
+	}
+	std::cout << "username accepted -> " << username << std::endl;
 	return (true);
 }
 
