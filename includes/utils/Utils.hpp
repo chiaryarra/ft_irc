@@ -10,6 +10,6 @@ bool	authPass(Client &client, std::string password, std::string server_password)
 void	setClientNick(std::string nickname, Client &client);
 bool	authPass(Client &client, std::string password, std::string server_password);
 void	setClientNick(std::string nickname, Client &client);
-bool	setClientUsername(std::vector<std::string> split_msg);
+bool	setClientUsername(std::string message, std::vector<std::string> split_msg);
 
 #endif

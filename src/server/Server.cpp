@@ -147,7 +147,7 @@ void    Server::processClientBuffer(Client &client)
 			if (split_msg[0].compare("NICK") == 0 && isNewNick(_clients, split_msg[1]))
 				setClientNick(split_msg[1], client);
 			if (split_msg[0].compare("USER") == 0)
-				setClientUsername(split_msg);
+				setClientUsername(message, split_msg);
 		}
 		// TODO message if command has no parameters
     }

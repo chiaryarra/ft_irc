@@ -1,5 +1,9 @@
 #include "../../includes/utils/Utils.hpp"
+#include <algorithm>
+#include <complex>
+#include <cstddef>
 #include <iostream>
+#include <string>
 
 bool	parseUsername(std::string username)
 {
@@ -28,8 +32,23 @@ bool	parseRealName(std::vector<std::string> subvec)
 	return (true);
 }
 
-bool	setClientUsername(std::vector<std::string> split_msg)
+std::string	fetchRealName(std::string message)
 {
+	size_t	colonPos;
+	std::string	realName;
+
+	colonPos = message.find_first_of(':') + 1;
+	realName = message.substr(colonPos, message.length());
+
+
+
+	return (realName);
+}
+
+bool	setClientUsername(std::string message, std::vector<std::string> split_msg)
+{
+	std::string realName;
+
 	if (split_msg.size() < 5)
 	{
 		std::cout << "Not enough parameters" << std::endl;
@@ -59,11 +78,14 @@ bool	setClientUsername(std::vector<std::string> split_msg)
 					return (false);
 				}
 				break ;
-			case 4:
-				std::vector<std::string> subvec(split_msg.begin() + index, split_msg.end());
-				if (!parseRealName(subvec))
-					return (false);
+			// case 4:
+			// 	std::vector<std::string> subvec(split_msg.begin() + index, split_msg.end());
+			// 	if (!parseRealName(subvec))
+			// 		return (false);
 		}
 	}
+	realName = fetchRealName(message);
+
+
 	return (true);
 }
