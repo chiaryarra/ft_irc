@@ -17,6 +17,10 @@ const std::string& Client::getUsername() const {
     return (_username);
 }
 
+const std::string& Client::getRealname() const {
+	return (_realname);
+}
+
 std::string& Client::getInputBuffer() {
     return (_inputBuffer);
 }
@@ -31,6 +35,10 @@ void    Client::setNickname(const std::string& nickname) {
 
 void    Client::setUsername(const std::string& username) {
     _username = username;
+}
+
+void    Client::setRealname(const std::string& realname) {
+    _realname = realname;
 }
 
 void    Client::setIsAuthenticated(bool state) {

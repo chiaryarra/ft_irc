@@ -1,6 +1,4 @@
 #include "../../includes/utils/Utils.hpp"
-#include <algorithm>
-#include <complex>
 #include <cstddef>
 #include <iostream>
 #include <string>
@@ -32,22 +30,28 @@ bool	parseRealName(std::vector<std::string> subvec)
 	return (true);
 }
 
-std::string	fetchRealName(std::string message)
+bool	fetchRealName(std::string message, Client &client)
 {
 	size_t	colonPos;
+	size_t	found;
 	std::string	realName;
 
 	colonPos = message.find_first_of(':') + 1;
 	realName = message.substr(colonPos, message.length());
-
-
-
-	return (realName);
+	realName.erase(realName.length() - 1);
+	found = realName.find_first_of("\r\n\0");
+	if (found != std::string::npos)
+	{
+		std::cout << "Invalid real name" << std::endl;	
+		return (false);
+	}
+	client.setRealname(realName);
+	return (true);
 }
 
-bool	setClientUsername(std::string message, std::vector<std::string> split_msg)
+bool	setClientUsername(std::string message, std::vector<std::string> split_msg, Client &client)
 {
-	std::string realName;
+	std::string realname;
 
 	if (split_msg.size() < 5)
 	{
@@ -63,6 +67,8 @@ bool	setClientUsername(std::string message, std::vector<std::string> split_msg)
 			case 1:
 				if (!parseUsername(*it))
 					return (false);
+				else
+					client.setUsername(*it);
 				break ;
 			case 2:
 				if (it->compare("0") != 0)
@@ -78,14 +84,9 @@ bool	setClientUsername(std::string message, std::vector<std::string> split_msg)
 					return (false);
 				}
 				break ;
-			// case 4:
-			// 	std::vector<std::string> subvec(split_msg.begin() + index, split_msg.end());
-			// 	if (!parseRealName(subvec))
-			// 		return (false);
 		}
 	}
-	realName = fetchRealName(message);
-
-
+	if (!fetchRealName(message, client))
+		return (false);
 	return (true);
 }
