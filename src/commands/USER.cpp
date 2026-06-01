@@ -38,7 +38,7 @@ bool	fetchRealName(std::string message, Client &client)
 
 	colonPos = message.find_first_of(':') + 1;
 	realName = message.substr(colonPos, message.length());
-	realName.erase(realName.length() - 1);
+	realName.erase(realName.length());
 	found = realName.find_first_of("\r\n\0");
 	if (found != std::string::npos)
 	{
