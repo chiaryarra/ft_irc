@@ -53,40 +53,47 @@ bool	setClientUsername(std::string message, std::vector<std::string> split_msg, 
 {
 	std::string realname;
 
-	if (split_msg.size() < 5)
+	if (!client.getIsAuthenticated())
 	{
-		std::cout << "Not enough parameters" << std::endl;
-		return false;
-	}
-
-	for (std::vector<std::string>::iterator it = split_msg.begin(); it != split_msg.end(); ++it)
-	{
-		int index = it - split_msg.begin();
-
-		switch (index) {
-			case 1:
-				if (!parseUsername(*it))
-					return (false);
-				else
-					client.setUsername(*it);
-				break ;
-			case 2:
-				if (it->compare("0") != 0)
-				{
-					std::cout << "Invalid mode " << *it << std::endl;
-					return (false);
-				}
-				break ;
-			case 3:
-				if (it->compare("*") != 0)
-				{
-					std::cout << "This unused " << *it << " is invalid" << std::endl;	
-					return (false);
-				}
-				break ;
-		}
-	}
-	if (!fetchRealName(message, client))
+		std::cout << "Client not authenticated" << std::endl;
 		return (false);
+	}
+	else
+	{
+		if (split_msg.size() < 5)
+		{
+			std::cout << "Not enough parameters" << std::endl;
+			return false;
+		}
+		for (std::vector<std::string>::iterator it = split_msg.begin(); it != split_msg.end(); ++it)
+		{
+			int index = it - split_msg.begin();
+
+			switch (index) {
+				case 1:
+					if (!parseUsername(*it))
+						return (false);
+					else
+						client.setUsername(*it);
+					break ;
+				case 2:
+					if (it->compare("0") != 0)
+					{
+						std::cout << "Invalid mode " << *it << std::endl;
+						return (false);
+					}
+					break ;
+				case 3:
+					if (it->compare("*") != 0)
+					{
+						std::cout << "This unused " << *it << " is invalid" << std::endl;	
+						return (false);
+					}
+					break ;
+			}
+		}
+		if (!fetchRealName(message, client))
+			return (false);
+	}
 	return (true);
 }
