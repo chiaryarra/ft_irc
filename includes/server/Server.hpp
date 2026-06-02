@@ -6,8 +6,8 @@
 #include <map>
 #include <poll.h>
 
-class Client;
-class Channel;
+#include "Channel.hpp"
+#include "../client/Client.hpp"
 
 class Server
 {
