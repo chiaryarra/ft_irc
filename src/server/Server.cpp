@@ -1,5 +1,7 @@
 #include "../../includes/server/Server.hpp"
 #include "../../includes/client/Client.hpp"
+#include "../../includes/utils/Utils.hpp"
+#include <sstream>
 #include <sys/socket.h>
 #include <stdexcept>
 #include <unistd.h>
@@ -102,6 +104,17 @@ void    Server::handleNewConnection() {
     }
 }
 
+std::vector<std::string> split(const std::string message)
+{
+	std::vector<std::string>	res;
+	std::istringstream			iss(message);
+	std::string					word;
+
+	while (iss >> word)
+		res.push_back(word);
+	return (res);
+}
+
 void    Server::processClientBuffer(Client &client)
 {
     std::string &buf = client.getInputBuffer();
@@ -111,7 +124,14 @@ void    Server::processClientBuffer(Client &client)
     {
         std::string message = buf.substr(0, pos);
         buf.erase(0, pos + 1);
+		std::vector<std::string> split_msg = split(message);
         std::cout << "Received command: " << message << std::endl;
+		if (split_msg.size() > 1)
+		{
+			if (split_msg[0].compare("PASS") == 0)
+				if (!authPass(client, split_msg[1], _password))
+					Server::removeClient(client.getFd());
+		}
     }
 }
 

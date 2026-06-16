@@ -4,7 +4,7 @@ CPP = c++
 
 FLAGS = -Wall -Werror -Wextra -std=c++98
 
-SRCS = src/general/main.cpp src/server/Server.cpp src/server/Channel.cpp src/client/Client.cpp 
+SRCS = src/general/main.cpp src/server/Server.cpp src/client/Client.cpp src/commands/PASS.cpp src/server/Channel.cpp 
 
 OBJS = $(SRCS:.cpp=.o)
 
