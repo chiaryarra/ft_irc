@@ -152,7 +152,7 @@ void    Server::removeClient(int clientFd)
 void    Server::sendMessage(int clientFd, const std::string &message)
 {
     std::string formatted = message + "\r\n";
-    size_t bytes_send;
+    ssize_t bytes_send;
 
     bytes_send = send(clientFd, formatted.c_str(), formatted.size(), 0);
     if (bytes_send < 0)
