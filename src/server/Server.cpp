@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include <cerrno>
+#include <set>
 
 Server::Server(int port, const std::string &password) {
     _port = port;
@@ -133,7 +134,7 @@ void    Server::processClientBuffer(Client &client)
 	std::string &buf = client.getInputBuffer();
     size_t pos;
 
-    while ((pos = buf.find("\n")) != std::string::npos)
+    while ((pos = buf.find("\r\n")) != std::string::npos)
     {
         std::string message = buf.substr(0, pos);
         buf.erase(0, pos + 1);
@@ -162,6 +163,31 @@ void    Server::removeClient(int clientFd)
             _pollFds.erase(_pollFds.begin() + i);
             break;
         }
+    }
+}
+
+void    Server::sendMessage(int clientFd, const std::string &message)
+{
+    std::string formatted = message + "\r\n";
+    ssize_t bytes_send;
+
+    bytes_send = send(clientFd, formatted.c_str(), formatted.size(), 0);
+    if (bytes_send < 0)
+        std::cerr << "Send failed to client fd: " << clientFd << std::endl;
+}
+
+void    Server::broadcastToChannel(const std::string &channelName, const std::string &message, int excludeFd)
+{
+    std::map<std::string, Channel>::iterator it = _channels.find(channelName);
+
+    if (it == _channels.end())
+        return;
+    const std::set<int> &clients = it->second.getClients();
+    for (std::set<int>::const_iterator index = clients.begin(); index != clients.end(); ++index)
+    {
+        if (*index == excludeFd)
+            continue;
+        sendMessage(*index, message);
     }
 }
 
