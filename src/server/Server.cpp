@@ -147,7 +147,13 @@ void    Server::processClientBuffer(Client &client)
 					Server::removeClient(client.getFd());
 			if (split_msg[0].compare("NICK") == 0 && isNewNick(_clients, split_msg[1]))
 				setClientNick(split_msg[1], client);
+			if (split_msg[0].compare("USER") == 0)
+				setClientUsername(message, split_msg, client);
 		}
+		std::cout << client.getNickname() << std::endl;
+		std::cout << client.getUsername() << std::endl;
+		std::cout << client.getRealname() << std::endl;
+
 		// TODO message if command has no parameters
     }
 }
