@@ -1,7 +1,7 @@
 #include "../../includes/client/Client.hpp"
 #include <unistd.h>
 
-Client::Client(int fd): _fd(fd), _nickname(""), _username(""), _inputBuffer(""), _isAuthenticated(false) {}
+Client::Client(int fd): _fd(fd), _nickname(""), _username(""), _inputBuffer(""), _isAuthenticated(false), _isRegistered(false) {}
 
 Client::~Client() {}
 
@@ -29,6 +29,10 @@ bool    Client::getIsAuthenticated() const {
     return (_isAuthenticated);
 }
 
+bool	Client::getIsRegistered() const {
+	return (_isRegistered);
+}
+
 void    Client::setNickname(const std::string& nickname) {
     _nickname = nickname;
 }
@@ -43,6 +47,10 @@ void    Client::setRealname(const std::string& realname) {
 
 void    Client::setIsAuthenticated(bool state) {
     _isAuthenticated = state;
+}
+
+void	Client::setIsRegistered(bool state) {
+	_isRegistered = state;
 }
 
 void    Client::appendBuffer(const std::string& append) {
