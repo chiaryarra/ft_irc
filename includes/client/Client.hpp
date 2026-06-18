@@ -12,6 +12,7 @@ private:
 	std::string _realname;
     std::string _inputBuffer;
     bool    _isAuthenticated;
+	bool	_isRegistered;
 public:
     Client(int fd);
     ~Client();
@@ -23,12 +24,14 @@ public:
     const std::string& getRealname() const;
     std::string& getInputBuffer();
     bool    getIsAuthenticated() const;
+	bool	getIsRegistered() const;
 
     // Setters
     void    setNickname(const std::string& nickname);
     void    setUsername(const std::string& username);
     void    setRealname(const std::string& realname);
     void    setIsAuthenticated(bool state);
+	void	setIsRegistered(bool state);
 
     // Public methods
     void    appendBuffer(const std::string& append);
