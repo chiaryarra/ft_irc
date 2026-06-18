@@ -194,6 +194,8 @@ void    Server::broadcastToChannel(const std::string &channelName, const std::st
 void	Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	(void)rawMsg;
+	if (tokens.size() < 2)
+		return ;
 	if (!authPass(client, tokens[1], _password))
 		Server::removeClient(client.getFd());
 }
@@ -201,12 +203,16 @@ void	Server::handlePass(Client &client, const std::string &rawMsg, const std::ve
 void	Server::handleNick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	(void)rawMsg;
+	if (tokens.size() < 2)
+		return ;
 	if (isNewNick(_clients, tokens[1]))
 		setClientNick(tokens[1], client);
 }
 
 void	Server::handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
+	if (tokens.size() < 2)
+		return ;
 	setClientUsername(rawMsg, tokens, client);
 }
 
