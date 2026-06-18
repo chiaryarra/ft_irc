@@ -148,19 +148,7 @@ void    Server::processClientBuffer(Client &client)
 				(this->*(it->second))(client, message, split_msg);
 			else
 				sendMessage(client.getFd(), "421 " + client.getNickname() + " " + split_msg[0] + " :Unknown command");
-			// if (split_msg[0].compare("PASS") == 0)
-			// 	if (!authPass(client, split_msg[1], _password))
-			// 		Server::removeClient(client.getFd());
-			// if (split_msg[0].compare("NICK") == 0 && isNewNick(_clients, split_msg[1]))
-			// 	setClientNick(split_msg[1], client);
-			// if (split_msg[0].compare("USER") == 0)
-			// 	setClientUsername(message, split_msg, client);
 		}
-		std::cout << client.getNickname() << std::endl;
-		std::cout << client.getUsername() << std::endl;
-		std::cout << client.getRealname() << std::endl;
-
-		// TODO message if command has no parameters
     }
 }
 
@@ -212,16 +200,14 @@ void	Server::handlePass(Client &client, const std::string &rawMsg, const std::ve
 
 void	Server::handleNick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
-	if (rawMsg.compare("NICK") == 0 && isNewNick(_clients, tokens[1]))
+	(void)rawMsg;
+	if (isNewNick(_clients, tokens[1]))
 		setClientNick(tokens[1], client);
-
 }
 
 void	Server::handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
-	if (tokens[0].compare("USER") == 0)
-		setClientUsername(rawMsg, tokens, client);
-
+	setClientUsername(rawMsg, tokens, client);
 }
 
 void	Server::initCommandMap()
