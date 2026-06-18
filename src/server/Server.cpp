@@ -19,6 +19,7 @@ Server::Server(int port, const std::string &password) {
     _password = password;
     _serverSocketFd = -1;
     _running = false;
+	initCommandMap();
 }
 
 Server::~Server() {
@@ -140,21 +141,14 @@ void    Server::processClientBuffer(Client &client)
         buf.erase(0, pos + 1);
 		std::vector<std::string> split_msg = split(message);
         std::cout << "Received command: " << message << std::endl;
-		if (split_msg.size() > 1)
+		if (!split_msg.empty())
 		{
-			if (split_msg[0].compare("PASS") == 0)
-				if (!authPass(client, split_msg[1], _password))
-					Server::removeClient(client.getFd());
-			if (split_msg[0].compare("NICK") == 0 && isNewNick(_clients, split_msg[1]))
-				setClientNick(split_msg[1], client);
-			if (split_msg[0].compare("USER") == 0)
-				setClientUsername(message, split_msg, client);
+			std::map<std::string, CommandHandler>::iterator it = _cmdMap.find(split_msg[0]);
+			if (it != _cmdMap.end())
+				(this->*(it->second))(client, message, split_msg);
+			else
+				sendMessage(client.getFd(), "421 " + client.getNickname() + " " + split_msg[0] + " :Unknown command");
 		}
-		std::cout << client.getNickname() << std::endl;
-		std::cout << client.getUsername() << std::endl;
-		std::cout << client.getRealname() << std::endl;
-
-		// TODO message if command has no parameters
     }
 }
 
@@ -195,6 +189,38 @@ void    Server::broadcastToChannel(const std::string &channelName, const std::st
             continue;
         sendMessage(*index, message);
     }
+}
+
+void	Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	(void)rawMsg;
+	if (tokens.size() < 2)
+		return ;
+	if (!authPass(client, tokens[1], _password))
+		Server::removeClient(client.getFd());
+}
+
+void	Server::handleNick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	(void)rawMsg;
+	if (tokens.size() < 2)
+		return ;
+	if (isNewNick(_clients, tokens[1]))
+		setClientNick(tokens[1], client);
+}
+
+void	Server::handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	if (tokens.size() < 2)
+		return ;
+	setClientUsername(rawMsg, tokens, client);
+}
+
+void	Server::initCommandMap()
+{
+	_cmdMap["PASS"] = &Server::handlePass;
+	_cmdMap["NICK"] = &Server::handleNick;
+	_cmdMap["USER"] = &Server::handleUser;
 }
 
 void    Server::handleClientData(int clientFd)
