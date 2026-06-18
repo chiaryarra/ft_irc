@@ -19,6 +19,7 @@ Server::Server(int port, const std::string &password) {
     _password = password;
     _serverSocketFd = -1;
     _running = false;
+	initCommandMap();
 }
 
 Server::~Server() {
@@ -195,6 +196,29 @@ void    Server::broadcastToChannel(const std::string &channelName, const std::st
             continue;
         sendMessage(*index, message);
     }
+}
+
+void	Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	if (!authPass(client, rawMsg, _password))
+		Server::removeClient(client.getFd());
+}
+
+void	Server::handleNick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+
+}
+
+void	Server::handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+
+}
+
+void	Server::initCommandMap()
+{
+	_cmdMap["PASS"] = &Server::handlePass;
+	_cmdMap["NICK"] = &Server::handleNick;
+	_cmdMap["USER"] = &Server::handleUser;
 }
 
 void    Server::handleClientData(int clientFd)
