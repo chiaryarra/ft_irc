@@ -149,10 +149,9 @@ void    Server::processClientBuffer(Client &client)
 			else
 				sendMessage(client.getFd(), "421 " + client.getNickname() + " " + split_msg[0] + " :Unknown command");
 		}
-		if (client.getIsAuthenticated() && !client.getNickname().empty() 
-			&& !client.getUsername().empty() && !client.getRealname().empty())
+		if (!client.getIsRegistered() && client.getIsAuthenticated() 
+			&& !client.getNickname().empty() && !client.getUsername().empty())
 			client.setIsRegistered(true);
-
 		// TODO message if command has no parameters
     }
 }
