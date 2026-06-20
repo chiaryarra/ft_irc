@@ -199,9 +199,21 @@ void	Server::handlePass(Client &client, const std::string &rawMsg, const std::ve
 {
 	(void)rawMsg;
 	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PASS " + MSG_NEEDMOREPARAMS);
 		return ;
+	}
+	if (client.getIsAuthenticated())
+	{
+		std::cout << "Client already authenticated" << std::endl;
+		sendMessage(client.getFd(), ERR_ALREADYREGISTRED + " PASS " + ":You may not register");
+		return ;
+	}
 	if (!authPass(client, tokens[1], _password))
+	{
+		sendMessage(client.getFd(), ERR_PASSWDMISMATCH + " PASS " + ":Password incorrect");
 		Server::removeClient(client.getFd());
+	}
 }
 
 void	Server::handleNick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
