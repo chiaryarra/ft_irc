@@ -144,7 +144,10 @@ void    Server::processClientBuffer(Client &client)
 		}
 		if (!client.getIsRegistered() && client.getIsAuthenticated() 
 			&& !client.getNickname().empty() && !client.getUsername().empty())
+		{
+			sendWelcomeMessage(client);
 			client.setIsRegistered(true);
+		}
 		// TODO message if command has no parameters
     }
 }
@@ -171,6 +174,19 @@ void    Server::sendMessage(int clientFd, const std::string &message)
     bytes_send = send(clientFd, formatted.c_str(), formatted.size(), 0);
     if (bytes_send < 0)
         std::cerr << "Send failed to client fd: " << clientFd << std::endl;
+}
+
+void	Server::sendWelcomeMessage(Client &client)
+{
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_WELCOME
+		+ " " + client.getNickname() + " :Welcome to our IRC network "
+		+ client.getNickname() + "!" + client.getUsername() + "@" + client.getHost());
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_YOURHOST
+		+ " " + client.getNickname() + " :Your host is " + _serverName + ", running version " + _version);
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_CREATED
+		+ " " + client.getNickname() + " :This server was created at " + _creationDate);
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_MYINFO
+		+ " " + _serverName + " " + _version + " o o");
 }
 
 void    Server::broadcastToChannel(const std::string &channelName, const std::string &message, int excludeFd)

@@ -40,6 +40,7 @@ private:
     void    processClientBuffer(Client &client);
     void    removeClient(int clientFd);
     void    sendMessage(int clientFd, const std::string &message);
+	void	sendWelcomeMessage(Client &client);
     void    broadcastToChannel(const std::string &channelName, const std::string &message, int excludeFd);
 	void	initCommandMap();
 	void	handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
