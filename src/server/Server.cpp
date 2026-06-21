@@ -86,7 +86,13 @@ void    Server::setupPolling() {
 void    Server::handleNewConnection() {
     while (true)
     {
-        int clientFd = accept(_serverSocketFd, NULL, NULL);
+		
+		struct sockaddr_in	clientAddr;
+		socklen_t			addrLen;
+
+		addrLen = sizeof(clientAddr);
+        int clientFd = accept(_serverSocketFd, (struct sockaddr*)&clientAddr, &addrLen);
+		std::string	clientHost = inet_ntoa(clientAddr.sin_addr);
         if (clientFd < 0)
         {
             if (errno == EWOULDBLOCK || errno == EAGAIN)
@@ -95,7 +101,7 @@ void    Server::handleNewConnection() {
                 throw std::runtime_error("Accept execution failed");
         }
         fcntl(clientFd, F_SETFL, O_NONBLOCK);
-        _clients.insert(std::make_pair(clientFd, Client(clientFd)));
+        _clients.insert(std::make_pair(clientFd, Client(clientFd, clientHost)));
         pollfd clientPollFd;
         clientPollFd.fd = clientFd;
         clientPollFd.events = POLLIN;

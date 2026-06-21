@@ -1,7 +1,7 @@
 #include "../../includes/client/Client.hpp"
 #include <unistd.h>
 
-Client::Client(int fd): _fd(fd), _nickname(""), _username(""), _inputBuffer(""), _isAuthenticated(false), _isRegistered(false) {}
+Client::Client(int fd, std::string& host): _fd(fd), _nickname(""), _username(""), _inputBuffer(""), _host(host), _isAuthenticated(false), _isRegistered(false) {}
 
 Client::~Client() {}
 
@@ -19,6 +19,10 @@ const std::string& Client::getUsername() const {
 
 const std::string& Client::getRealname() const {
 	return (_realname);
+}
+
+const std::string& Client::getHost() const {
+	return (_host);
 }
 
 std::string& Client::getInputBuffer() {
