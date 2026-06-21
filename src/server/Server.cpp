@@ -15,7 +15,7 @@
 #include <cerrno>
 #include <set>
 
-Server::Server(int port, const std::string &password) {
+Server::Server(int port, const std::string &password) : _serverName("ircat"){
     _port = port;
     _password = password;
     _serverSocketFd = -1;
@@ -237,13 +237,6 @@ void	Server::handleUser(Client &client, const std::string &rawMsg, const std::ve
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid unused (not *)");
 	if (res.compare(ERR_INVALIDREALNAME) == 0)
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid realname");
-}
-
-std::string	Server::code_string(unsigned int code)
-{
-	std::stringstream	ss;
-	ss << code;
-	return (ss.str());
 }
 
 void	Server::initCommandMap()
