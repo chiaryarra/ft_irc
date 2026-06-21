@@ -221,9 +221,22 @@ void	Server::handleNick(Client &client, const std::string &rawMsg, const std::ve
 
 void	Server::handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
+	std::string	res;
+
 	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + MSG_NEEDMOREPARAMS);
 		return ;
-	setClientUsername(rawMsg, tokens, client);
+	}
+	res = setClientUsername(rawMsg, tokens, client);
+	if (res.compare(ERR_INVALIDUSERNAME) == 0)
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid username");
+	if (res.compare(ERR_INVALIDMODE) == 0)
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid mode (not 0)");
+	if (res.compare(ERR_INVALIDUNUSED) == 0)
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid unused (not *)");
+	if (res.compare(ERR_INVALIDREALNAME) == 0)
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid realname");
 }
 
 std::string	Server::code_string(unsigned int code)

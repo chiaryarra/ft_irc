@@ -22,11 +22,16 @@ const std::string	ERR_NEEDMOREPARAMS = "461";
 const std::string	ERR_ALREADYREGISTRED = "462";
 const std::string	ERR_PASSWDMISMATCH = "464";
 
+const std::string	ERR_INVALIDUSERNAME = "900";
+const std::string	ERR_INVALIDMODE = "901";
+const std::string	ERR_INVALIDUNUSED = "902";
+const std::string	ERR_INVALIDREALNAME = "903";
+
 const std::string	MSG_NEEDMOREPARAMS = ":Not enough parameters";
 
 
 std::string	authPass(Client &client, std::string password, std::string server_password);
 std::string	setClientNick(std::string nickname, Client &client, std::map<int, Client> &clients);
-bool	setClientUsername(std::string message, std::vector<std::string> split_msg, Client &client);
+std::string	setClientUsername(std::string message, std::vector<std::string> split_msg, Client &client);
 
 #endif
