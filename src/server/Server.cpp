@@ -136,6 +136,11 @@ void    Server::processClientBuffer(Client &client)
         std::cout << "Received command: " << message << std::endl;
 		if (!split_msg.empty())
 		{
+			if (split_msg.size() < 2)
+			{
+				sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " " + split_msg[0] + " " + MSG_NEEDMOREPARAMS);
+				continue;
+			}
 			std::map<std::string, CommandHandler>::iterator it = _cmdMap.find(split_msg[0]);
 			if (it != _cmdMap.end())
 				(this->*(it->second))(client, message, split_msg);
@@ -148,7 +153,6 @@ void    Server::processClientBuffer(Client &client)
 			sendWelcomeMessage(client);
 			client.setIsRegistered(true);
 		}
-		// TODO message if command has no parameters
     }
 }
 
@@ -209,11 +213,6 @@ void	Server::handlePass(Client &client, const std::string &rawMsg, const std::ve
 	std::string	res;
 	
 	(void)rawMsg;
-	if (tokens.size() < 2)
-	{
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PASS " + MSG_NEEDMOREPARAMS);
-		return ;
-	}
 	res = authPass(client, tokens[1], _password);
 	if (res.compare(ERR_ALREADYREGISTRED) == 0)
 		sendMessage(client.getFd(), ERR_ALREADYREGISTRED + " PASS " + ":You may not reregister");
@@ -229,11 +228,6 @@ void	Server::handleNick(Client &client, const std::string &rawMsg, const std::ve
 	std::string	res;
 
 	(void)rawMsg;
-	if (tokens.size() < 2)
-	{
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " NICK " + MSG_NEEDMOREPARAMS);
-		return ;
-	}
 	res = setClientNick(tokens[1], client, _clients);
 	if (res.compare(ERR_ERRONEUSNICKNAME) == 0)
 		sendMessage(client.getFd(), ERR_ERRONEUSNICKNAME + " NICK " + ":Erroneous Nickname");
@@ -245,11 +239,6 @@ void	Server::handleUser(Client &client, const std::string &rawMsg, const std::ve
 {
 	std::string	res;
 
-	if (tokens.size() < 2)
-	{
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + MSG_NEEDMOREPARAMS);
-		return ;
-	}
 	res = setClientUsername(rawMsg, tokens, client);
 	if (res.compare(ERR_INVALIDUSERNAME) == 0)
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid username");
