@@ -6,6 +6,7 @@
 # include <string>
 # include "../client/Client.hpp"
 
+const std::string	RPL_SUCCESS = "000";
 const std::string	RPL_WELCOME = "001";
 const std::string	RPL_YOURHOST = "002";
 const std::string	RPL_CREATED = "003";
@@ -23,7 +24,7 @@ const std::string	ERR_PASSWDMISMATCH = "464";
 const std::string	MSG_NEEDMOREPARAMS = ":Not enough parameters";
 
 
-bool	authPass(Client &client, std::string password, std::string server_password);
+std::string	authPass(Client &client, std::string password, std::string server_password);
 void	setClientNick(std::string nickname, Client &client);
 bool	setClientUsername(std::string message, std::vector<std::string> split_msg, Client &client);
 

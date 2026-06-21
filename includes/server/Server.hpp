@@ -42,6 +42,7 @@ private:
 	void	handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void	handleNick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void	handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
+	std::string	code_string(unsigned int code);
 public:
     // Constructors
     Server(int port, const std::string& password);

@@ -2,6 +2,7 @@
 #include "../../includes/client/Client.hpp"
 #include "../../includes/utils/Utils.hpp"
 #include <sstream>
+#include <string>
 #include <sys/socket.h>
 #include <stdexcept>
 #include <unistd.h>
@@ -147,7 +148,7 @@ void    Server::processClientBuffer(Client &client)
 			if (it != _cmdMap.end())
 				(this->*(it->second))(client, message, split_msg);
 			else
-				sendMessage(client.getFd(), "421 " + client.getNickname() + " " + split_msg[0] + " :Unknown command");
+				sendMessage(client.getFd(), "421" + client.getNickname() + " " + split_msg[0] + " :Unknown command");
 		}
 		if (!client.getIsRegistered() && client.getIsAuthenticated() 
 			&& !client.getNickname().empty() && !client.getUsername().empty())
@@ -197,22 +198,21 @@ void    Server::broadcastToChannel(const std::string &channelName, const std::st
 
 void	Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
+	std::string	res;
+	
 	(void)rawMsg;
 	if (tokens.size() < 2)
 	{
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PASS " + MSG_NEEDMOREPARAMS);
 		return ;
 	}
-	if (client.getIsAuthenticated())
+	res = authPass(client, tokens[1], _password);
+	if (res.compare(ERR_ALREADYREGISTRED) == 0)
+		sendMessage(client.getFd(), ERR_ALREADYREGISTRED + " PASS " + ":You may not reregister");
+	if (res.compare(ERR_PASSWDMISMATCH) == 0)
 	{
-		std::cout << "Client already authenticated" << std::endl;
-		sendMessage(client.getFd(), ERR_ALREADYREGISTRED + " PASS " + ":You may not register");
-		return ;
-	}
-	if (!authPass(client, tokens[1], _password))
-	{
-		sendMessage(client.getFd(), ERR_PASSWDMISMATCH + " PASS " + ":Password incorrect");
-		Server::removeClient(client.getFd());
+	 	sendMessage(client.getFd(), ERR_PASSWDMISMATCH + " PASS " + ":Password incorrect");
+		removeClient(client.getFd());
 	}
 }
 
@@ -220,7 +220,10 @@ void	Server::handleNick(Client &client, const std::string &rawMsg, const std::ve
 {
 	(void)rawMsg;
 	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PASS " + MSG_NEEDMOREPARAMS);
 		return ;
+	}
 	if (isNewNick(_clients, tokens[1]))
 		setClientNick(tokens[1], client);
 }
@@ -230,6 +233,13 @@ void	Server::handleUser(Client &client, const std::string &rawMsg, const std::ve
 	if (tokens.size() < 2)
 		return ;
 	setClientUsername(rawMsg, tokens, client);
+}
+
+std::string	Server::code_string(unsigned int code)
+{
+	std::stringstream	ss;
+	ss << code;
+	return (ss.str());
 }
 
 void	Server::initCommandMap()
