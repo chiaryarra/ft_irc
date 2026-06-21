@@ -140,7 +140,7 @@ void    Server::processClientBuffer(Client &client)
 			if (it != _cmdMap.end())
 				(this->*(it->second))(client, message, split_msg);
 			else
-				sendMessage(client.getFd(), "421" + client.getNickname() + " " + split_msg[0] + " :Unknown command");
+				sendMessage(client.getFd(), ERR_UNKNOWNCOMMAND + " " + (client.getNickname().empty() ? "*" : client.getNickname()) + " " + split_msg[0] + " :Unknown command");
 		}
 		if (!client.getIsRegistered() && client.getIsAuthenticated() 
 			&& !client.getNickname().empty() && !client.getUsername().empty())
