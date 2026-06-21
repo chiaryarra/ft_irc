@@ -14,6 +14,7 @@ class Server
 private:
     // Server atributes
 	const std::string	_serverName;
+	const std::string	_version;
     int _port;
     std::string _password;
     int _serverSocketFd;
