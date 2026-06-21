@@ -117,20 +117,6 @@ std::vector<std::string> split(const std::string message)
 	return (res);
 }
 
-bool	isNewNick(std::map<int, Client> &clients, std::string nickname)
-{
-	for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
-	{
-		Client client = it->second;
-		if (client.getNickname().compare(nickname) == 0)
-		{
-			std::cout << "Nick " << nickname << " has already been registered. Choose another." << std::endl;
-			return (false);
-		}
-	}
-	return (true);
-}
-
 void    Server::processClientBuffer(Client &client)
 {
 	std::string &buf = client.getInputBuffer();
@@ -218,14 +204,19 @@ void	Server::handlePass(Client &client, const std::string &rawMsg, const std::ve
 
 void	Server::handleNick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
+	std::string	res;
+
 	(void)rawMsg;
 	if (tokens.size() < 2)
 	{
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PASS " + MSG_NEEDMOREPARAMS);
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " NICK " + MSG_NEEDMOREPARAMS);
 		return ;
 	}
-	if (isNewNick(_clients, tokens[1]))
-		setClientNick(tokens[1], client);
+	res = setClientNick(tokens[1], client, _clients);
+	if (res.compare(ERR_ERRONEUSNICKNAME) == 0)
+		sendMessage(client.getFd(), ERR_ERRONEUSNICKNAME + " NICK " + ":Erroneous Nickname");
+	if (res.compare(ERR_NICKNAMEINUSE) == 0)
+		sendMessage(client.getFd(), ERR_NICKNAMEINUSE + " NICK " + ":Nickname is already in use");
 }
 
 void	Server::handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
