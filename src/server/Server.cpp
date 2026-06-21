@@ -15,7 +15,7 @@
 #include <cerrno>
 #include <set>
 
-Server::Server(int port, const std::string &password) : _serverName("ircat"), _version("0.5"){
+Server::Server(int port, const std::string &password) : _serverName("ircat"), _version("0.5"), _creationDate(std::string(__DATE__) + " " + __TIME__){
     _port = port;
     _password = password;
     _serverSocketFd = -1;
