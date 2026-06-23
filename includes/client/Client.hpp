@@ -11,10 +11,11 @@ private:
     std::string _username;
 	std::string _realname;
     std::string _inputBuffer;
+	std::string	_host;
     bool    _isAuthenticated;
 	bool	_isRegistered;
 public:
-    Client(int fd);
+    Client(int fd, std::string& host);
     ~Client();
     
     // Getters
@@ -22,6 +23,7 @@ public:
     const std::string& getNickname() const;
     const std::string& getUsername() const;
     const std::string& getRealname() const;
+    const std::string& getHost() const;
     std::string& getInputBuffer();
     bool    getIsAuthenticated() const;
 	bool	getIsRegistered() const;

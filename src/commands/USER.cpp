@@ -3,30 +3,22 @@
 #include <iostream>
 #include <string>
 
-bool	parseUsername(std::string username)
+bool	parseUsername(std::string username, Client &client)
 {
 	size_t	found;
 
 	if (username.empty() || username.size() > 32)
 	{
-		std::cout << "Username empty or too large" << std::endl;
+		std::cout << "Username empty or too large. Client FD: " << client.getFd() << std::endl;
 		return (false);
 	}
 	found = username.find_first_of(" @!:\r\n\0"); 
 	if (found != std::string::npos)
 	{
-		std::cout << "Character " << username[found] << " is forbidden" << std::endl;
+		std::cout << "Character " << username[found] << " is forbidden. Client FD:" << client.getFd() << std::endl;
 		return false;
 	}
-	std::cout << "username accepted -> " << username << std::endl;
-	return (true);
-}
-
-bool	parseRealName(std::vector<std::string> subvec)
-{
-	for (std::vector<std::string>::iterator it = subvec.begin(); it != subvec.end(); ++it) {
-		std::cout << *it << std::endl;
-	}
+	std::cout << "username accepted -> " << username << ". Client FD: " << client.getFd() << std::endl;
 	return (true);
 }
 
@@ -42,58 +34,44 @@ bool	fetchRealName(std::string message, Client &client)
 	found = realName.find_first_of("\r\n\0");
 	if (found != std::string::npos)
 	{
-		std::cout << "Invalid real name" << std::endl;	
+		std::cout << "Invalid real name. Client FD: " << client.getFd() << std::endl;	
 		return (false);
 	}
 	client.setRealname(realName);
 	return (true);
 }
 
-bool	setClientUsername(std::string message, std::vector<std::string> split_msg, Client &client)
+std::string	setClientUsername(std::string message, std::vector<std::string> split_msg, Client &client)
 {
 	std::string realname;
 
-	if (!client.getIsAuthenticated())
+	for (std::vector<std::string>::iterator it = split_msg.begin(); it != split_msg.end(); ++it)
 	{
-		std::cout << "Client not authenticated" << std::endl;
-		return (false);
-	}
-	else
-	{
-		if (split_msg.size() < 5)
-		{
-			std::cout << "Not enough parameters" << std::endl;
-			return false;
+		int index = it - split_msg.begin();
+		switch (index) {
+			case 1:
+				if (!parseUsername(*it, client))
+					return (ERR_INVALIDUSERNAME);
+				else
+					client.setUsername(*it);
+				break ;
+			case 2:
+				if (it->compare("0") != 0)
+				{
+					std::cout << "Invalid mode " << *it << std::endl;
+					return (ERR_INVALIDMODE);
+				}
+				break ;
+			case 3:
+				if (it->compare("*") != 0)
+				{
+					std::cout << "This unused " << *it << " is invalid" << std::endl;	
+					return (ERR_INVALIDUNUSED);
+				}
+				break ;
 		}
-		for (std::vector<std::string>::iterator it = split_msg.begin(); it != split_msg.end(); ++it)
-		{
-			int index = it - split_msg.begin();
-
-			switch (index) {
-				case 1:
-					if (!parseUsername(*it))
-						return (false);
-					else
-						client.setUsername(*it);
-					break ;
-				case 2:
-					if (it->compare("0") != 0)
-					{
-						std::cout << "Invalid mode " << *it << std::endl;
-						return (false);
-					}
-					break ;
-				case 3:
-					if (it->compare("*") != 0)
-					{
-						std::cout << "This unused " << *it << " is invalid" << std::endl;	
-						return (false);
-					}
-					break ;
-			}
-		}
-		if (!fetchRealName(message, client))
-			return (false);
 	}
-	return (true);
+	if (!fetchRealName(message, client))
+		return (ERR_INVALIDREALNAME);
+	return (RPL_SUCCESS);
 }

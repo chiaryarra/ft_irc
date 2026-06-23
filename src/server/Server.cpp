@@ -2,6 +2,7 @@
 #include "../../includes/client/Client.hpp"
 #include "../../includes/utils/Utils.hpp"
 #include <sstream>
+#include <string>
 #include <sys/socket.h>
 #include <stdexcept>
 #include <unistd.h>
@@ -14,7 +15,7 @@
 #include <cerrno>
 #include <set>
 
-Server::Server(int port, const std::string &password) {
+Server::Server(int port, const std::string &password) : _serverName("ircat"), _version("0.5"), _creationDate(std::string(__DATE__) + " " + __TIME__){
     _port = port;
     _password = password;
     _serverSocketFd = -1;
@@ -85,7 +86,13 @@ void    Server::setupPolling() {
 void    Server::handleNewConnection() {
     while (true)
     {
-        int clientFd = accept(_serverSocketFd, NULL, NULL);
+		
+		struct sockaddr_in	clientAddr;
+		socklen_t			addrLen;
+
+		addrLen = sizeof(clientAddr);
+        int clientFd = accept(_serverSocketFd, (struct sockaddr*)&clientAddr, &addrLen);
+		std::string	clientHost = inet_ntoa(clientAddr.sin_addr);
         if (clientFd < 0)
         {
             if (errno == EWOULDBLOCK || errno == EAGAIN)
@@ -94,7 +101,7 @@ void    Server::handleNewConnection() {
                 throw std::runtime_error("Accept execution failed");
         }
         fcntl(clientFd, F_SETFL, O_NONBLOCK);
-        _clients.insert(std::make_pair(clientFd, Client(clientFd)));
+        _clients.insert(std::make_pair(clientFd, Client(clientFd, clientHost)));
         pollfd clientPollFd;
         clientPollFd.fd = clientFd;
         clientPollFd.events = POLLIN;
@@ -116,20 +123,6 @@ std::vector<std::string> split(const std::string message)
 	return (res);
 }
 
-bool	isNewNick(std::map<int, Client> &clients, std::string nickname)
-{
-	for (std::map<int, Client>::iterator it = clients.begin(); it != clients.end(); ++it)
-	{
-		Client client = it->second;
-		if (client.getNickname().compare(nickname) == 0)
-		{
-			std::cout << "Nick " << nickname << " has already been registered. Choose another." << std::endl;
-			return (false);
-		}
-	}
-	return (true);
-}
-
 void    Server::processClientBuffer(Client &client)
 {
 	std::string &buf = client.getInputBuffer();
@@ -143,16 +136,23 @@ void    Server::processClientBuffer(Client &client)
         std::cout << "Received command: " << message << std::endl;
 		if (!split_msg.empty())
 		{
+			if (split_msg.size() < 2)
+			{
+				sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " " + split_msg[0] + " " + MSG_NEEDMOREPARAMS);
+				continue;
+			}
 			std::map<std::string, CommandHandler>::iterator it = _cmdMap.find(split_msg[0]);
 			if (it != _cmdMap.end())
 				(this->*(it->second))(client, message, split_msg);
 			else
-				sendMessage(client.getFd(), "421 " + client.getNickname() + " " + split_msg[0] + " :Unknown command");
+				sendMessage(client.getFd(), ERR_UNKNOWNCOMMAND + " " + (client.getNickname().empty() ? "*" : client.getNickname()) + " " + split_msg[0] + " :Unknown command");
 		}
 		if (!client.getIsRegistered() && client.getIsAuthenticated() 
 			&& !client.getNickname().empty() && !client.getUsername().empty())
+		{
+			sendWelcomeMessage(client);
 			client.setIsRegistered(true);
-		// TODO message if command has no parameters
+		}
     }
 }
 
@@ -180,6 +180,19 @@ void    Server::sendMessage(int clientFd, const std::string &message)
         std::cerr << "Send failed to client fd: " << clientFd << std::endl;
 }
 
+void	Server::sendWelcomeMessage(Client &client)
+{
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_WELCOME
+		+ " " + client.getNickname() + " :Welcome to our IRC network "
+		+ client.getNickname() + "!" + client.getUsername() + "@" + client.getHost());
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_YOURHOST
+		+ " " + client.getNickname() + " :Your host is " + _serverName + ", running version " + _version);
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_CREATED
+		+ " " + client.getNickname() + " :This server was created at " + _creationDate);
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_MYINFO
+		+ " " + _serverName + " " + _version + " o o");
+}
+
 void    Server::broadcastToChannel(const std::string &channelName, const std::string &message, int excludeFd)
 {
     std::map<std::string, Channel>::iterator it = _channels.find(channelName);
@@ -197,27 +210,44 @@ void    Server::broadcastToChannel(const std::string &channelName, const std::st
 
 void	Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
+	std::string	res;
+	
 	(void)rawMsg;
-	if (tokens.size() < 2)
-		return ;
-	if (!authPass(client, tokens[1], _password))
-		Server::removeClient(client.getFd());
+	res = authPass(client, tokens[1], _password);
+	if (res.compare(ERR_ALREADYREGISTRED) == 0)
+		sendMessage(client.getFd(), ERR_ALREADYREGISTRED + " PASS " + ":You may not reregister");
+	if (res.compare(ERR_PASSWDMISMATCH) == 0)
+	{
+	 	sendMessage(client.getFd(), ERR_PASSWDMISMATCH + " PASS " + ":Password incorrect");
+		removeClient(client.getFd());
+	}
 }
 
 void	Server::handleNick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
+	std::string	res;
+
 	(void)rawMsg;
-	if (tokens.size() < 2)
-		return ;
-	if (isNewNick(_clients, tokens[1]))
-		setClientNick(tokens[1], client);
+	res = setClientNick(tokens[1], client, _clients);
+	if (res.compare(ERR_ERRONEUSNICKNAME) == 0)
+		sendMessage(client.getFd(), ERR_ERRONEUSNICKNAME + " NICK " + ":Erroneous Nickname");
+	if (res.compare(ERR_NICKNAMEINUSE) == 0)
+		sendMessage(client.getFd(), ERR_NICKNAMEINUSE + " NICK " + ":Nickname is already in use");
 }
 
 void	Server::handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
-	if (tokens.size() < 2)
-		return ;
-	setClientUsername(rawMsg, tokens, client);
+	std::string	res;
+
+	res = setClientUsername(rawMsg, tokens, client);
+	if (res.compare(ERR_INVALIDUSERNAME) == 0)
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid username");
+	if (res.compare(ERR_INVALIDMODE) == 0)
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid mode (not 0)");
+	if (res.compare(ERR_INVALIDUNUSED) == 0)
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid unused (not *)");
+	if (res.compare(ERR_INVALIDREALNAME) == 0)
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid realname");
 }
 
 void	Server::initCommandMap()
