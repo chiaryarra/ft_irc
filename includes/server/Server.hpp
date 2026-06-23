@@ -46,6 +46,7 @@ private:
 	void	handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void	handleNick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void	handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
+	bool	checkForParams(Client &client, std::string commmand, unsigned int size);
 public:
     // Constructors
     Server(int port, const std::string& password);

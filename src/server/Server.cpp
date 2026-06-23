@@ -136,11 +136,6 @@ void    Server::processClientBuffer(Client &client)
         std::cout << "Received command: " << message << std::endl;
 		if (!split_msg.empty())
 		{
-			if (split_msg.size() < 2)
-			{
-				sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " " + split_msg[0] + " " + MSG_NEEDMOREPARAMS);
-				continue;
-			}
 			std::map<std::string, CommandHandler>::iterator it = _cmdMap.find(split_msg[0]);
 			if (it != _cmdMap.end())
 				(this->*(it->second))(client, message, split_msg);
@@ -208,11 +203,23 @@ void    Server::broadcastToChannel(const std::string &channelName, const std::st
     }
 }
 
+bool	Server::checkForParams(Client &client, std::string command, unsigned int size)
+{
+	if (size < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " " + command + " " + MSG_NEEDMOREPARAMS);
+		return (false);
+	}
+	return (true);
+}
+
 void	Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	std::string	res;
 	
 	(void)rawMsg;
+	if (!checkForParams(client, tokens[0], tokens.size()))
+		return ;
 	res = authPass(client, tokens[1], _password);
 	if (res.compare(ERR_ALREADYREGISTRED) == 0)
 		sendMessage(client.getFd(), ERR_ALREADYREGISTRED + " PASS " + ":You may not reregister");
@@ -228,6 +235,8 @@ void	Server::handleNick(Client &client, const std::string &rawMsg, const std::ve
 	std::string	res;
 
 	(void)rawMsg;
+	if (!checkForParams(client, tokens[0], tokens.size()))
+		return ;
 	res = setClientNick(tokens[1], client, _clients);
 	if (res.compare(ERR_ERRONEUSNICKNAME) == 0)
 		sendMessage(client.getFd(), ERR_ERRONEUSNICKNAME + " NICK " + ":Erroneous Nickname");
@@ -240,6 +249,8 @@ void	Server::handleUser(Client &client, const std::string &rawMsg, const std::ve
 	std::string	res;
 
 	res = setClientUsername(rawMsg, tokens, client);
+	if (!checkForParams(client, tokens[0], tokens.size()))
+		return ;
 	if (res.compare(ERR_INVALIDUSERNAME) == 0)
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid username");
 	if (res.compare(ERR_INVALIDMODE) == 0)
