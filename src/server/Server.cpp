@@ -1,6 +1,7 @@
 #include "../../includes/server/Server.hpp"
 #include "../../includes/client/Client.hpp"
 #include "../../includes/utils/Utils.hpp"
+#include <cstddef>
 #include <sstream>
 #include <string>
 #include <sys/socket.h>
@@ -14,6 +15,7 @@
 #include <iostream>
 #include <cerrno>
 #include <set>
+#include <vector>
 
 Server::Server(int port, const std::string &password) : _serverName("ircat"), _version("0.5"), _creationDate(std::string(__DATE__) + " " + __TIME__){
     _port = port;
@@ -268,12 +270,38 @@ void	Server::handleCap(Client &client, const std::string &rawMsg, const std::vec
 	return ;
 }
 
+void	Server::handlePing(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PING " + MSG_NEEDMOREPARAMS);
+		return ;
+	}
+	size_t pos = rawMsg.find_first_of(":");
+	if (pos != std::string::npos)
+		sendMessage(client.getFd(), "PONG " + rawMsg.substr(pos));
+	else
+	{
+		std::string	msg;
+		std::vector<std::string>::const_iterator last = tokens.end();
+		last++;
+		for (std::vector<std::string>::const_iterator it = tokens.begin() + 1; it != tokens.end(); ++it)
+		{
+			msg.append(*it);
+			if (it != last)
+				msg.append(" ");
+		}
+		sendMessage(client.getFd(), "PONG " + msg);
+	}
+}
+
 void	Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
 	_cmdMap["NICK"] = &Server::handleNick;
 	_cmdMap["USER"] = &Server::handleUser;
 	_cmdMap["CAP"] = &Server::handleCap;
+	_cmdMap["PING"] = &Server::handlePing;
 }
 
 void    Server::handleClientData(int clientFd)
