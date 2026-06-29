@@ -218,8 +218,11 @@ void	Server::handlePass(Client &client, const std::string &rawMsg, const std::ve
 	std::string	res;
 	
 	(void)rawMsg;
-	if (!checkForParams(client, tokens[0], tokens.size()))
+	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PASS " + MSG_NEEDMOREPARAMS);
 		return ;
+	}
 	res = authPass(client, tokens[1], _password);
 	if (res.compare(ERR_ALREADYREGISTRED) == 0)
 		sendMessage(client.getFd(), ERR_ALREADYREGISTRED + " PASS " + ":You may not reregister");
