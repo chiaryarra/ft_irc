@@ -185,7 +185,7 @@ void	Server::sendWelcomeMessage(Client &client)
 	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_CREATED
 		+ " " + client.getNickname() + " :This server was created at " + _creationDate);
 	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_MYINFO
-		+ " " + _serverName + " " + _version + " o o");
+		+ " " + client.getNickname() + " " + _serverName + " " + _version + " o o");
 }
 
 void    Server::broadcastToChannel(const std::string &channelName, const std::string &message, int excludeFd)
