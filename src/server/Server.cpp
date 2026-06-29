@@ -203,16 +203,6 @@ void    Server::broadcastToChannel(const std::string &channelName, const std::st
     }
 }
 
-bool	Server::checkForParams(Client &client, std::string command, unsigned int size)
-{
-	if (size < 2)
-	{
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " " + command + " " + MSG_NEEDMOREPARAMS);
-		return (false);
-	}
-	return (true);
-}
-
 void	Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	std::string	res;
@@ -238,8 +228,11 @@ void	Server::handleNick(Client &client, const std::string &rawMsg, const std::ve
 	std::string	res;
 
 	(void)rawMsg;
-	if (!checkForParams(client, tokens[0], tokens.size()))
+	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " NICK " + MSG_NEEDMOREPARAMS);
 		return ;
+	}
 	res = setClientNick(tokens[1], client, _clients);
 	if (res.compare(ERR_ERRONEUSNICKNAME) == 0)
 		sendMessage(client.getFd(), ERR_ERRONEUSNICKNAME + " NICK " + ":Erroneous Nickname");
