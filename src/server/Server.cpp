@@ -249,8 +249,11 @@ void	Server::handleUser(Client &client, const std::string &rawMsg, const std::ve
 	std::string	res;
 
 	res = setClientUsername(rawMsg, tokens, client);
-	if (!checkForParams(client, tokens[0], tokens.size()))
+	if (tokens.size() < 5)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + MSG_NEEDMOREPARAMS);
 		return ;
+	}
 	if (res.compare(ERR_INVALIDUSERNAME) == 0)
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid username");
 	if (res.compare(ERR_INVALIDMODE) == 0)
