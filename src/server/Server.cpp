@@ -260,11 +260,20 @@ void	Server::handleUser(Client &client, const std::string &rawMsg, const std::ve
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid realname");
 }
 
+void	Server::handleCap(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	(void)rawMsg;
+	(void)tokens;
+	std::cout << "Ignoring CAP command from FD: " << client.getFd() << std::endl;
+	return ;
+}
+
 void	Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
 	_cmdMap["NICK"] = &Server::handleNick;
 	_cmdMap["USER"] = &Server::handleUser;
+	_cmdMap["CAP"] = &Server::handleCap;
 }
 
 void    Server::handleClientData(int clientFd)
