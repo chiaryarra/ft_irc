@@ -22,7 +22,30 @@ public:
     void addOperator(int clientFd);
     bool isMember(int clientFd) const;
     bool isOperator(int clientFd) const;
-    const std::set<int> &getClients() const;
+	
+	const std::set<int> &getClients() const;
+
+	void	setTopic(std::string &topic);
+	void	setMode(std::string &modes);
+	void	setKey(std::string &key);
+	void	setUserLimit(int limit);
+
+
+	const std::string	&getTopic() const;
+	const std::string	&getMode() const;
+	const std::string	&getKey() const;
+	const int			&getUserLimit() const;
+
+	bool	hasMode();
+	bool	isInvited();
+
+	void	removeMode(std::string modes);
+	void	removeInvite(int clientFd);
+
+	void	addInvite(int clientFd);
+
+	
+
 };
 
 #endif
