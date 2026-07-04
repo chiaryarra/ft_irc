@@ -7,9 +7,14 @@
 class Channel
 {
 private:
-    std::string _name;
-    std::set<int> _clients;
-    std::set<int> _operators;
+    std::string		_name;
+    std::set<int>	_clients;
+    std::set<int>	_operators;
+	std::string		_topic;
+	std::string		_modes;
+	std::string		_key;
+	std::set<int>	_inviteList;
+	int				_userLimit;
 public:
     Channel(const std::string &name);
     void addClient(int clientFd);
