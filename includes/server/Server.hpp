@@ -47,6 +47,8 @@ private:
 	void	handleNick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void	handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void	handleJoin(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
+	void	handleCap(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
+	void	handlePing(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	bool	checkForParams(Client &client, std::string commmand, unsigned int size);
 	std::string	showClientsInChannel(Channel &channel);
 public:
