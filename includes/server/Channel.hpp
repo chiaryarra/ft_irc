@@ -18,6 +18,7 @@ private:
 public:
     Channel(const std::string &name);
 
+	const std::string &getName() const;
 	const std::set<int> &getClients() const;
 	const std::string	&getTopic() const;
 	const std::string	&getModes() const;

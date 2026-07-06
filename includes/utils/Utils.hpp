@@ -31,6 +31,7 @@ const std::string	ERR_INVALIDUNUSED = "902";
 const std::string	ERR_INVALIDREALNAME = "903";
 
 /* Channel success replies */
+const std::string	RPL_NOTOPIC = "331";
 const std::string	RPL_TOPIC = "332";
 const std::string	RPL_INVITING = "341";
 const std::string	RPL_NAMREPLY = "353";
@@ -57,5 +58,6 @@ const std::string	MSG_NEEDMOREPARAMS = ":Not enough parameters";
 std::string authPass(Client &client, std::string password, std::string server_password);
 std::string setClientNick(std::string nickname, Client &client, std::map<int, Client> &clients);
 std::string setClientUsername(std::string message, std::vector<std::string> split_msg, Client &client);
+std::string joinChannel(Client &client, std::string channelName, bool isNewChannel);
 
 #endif

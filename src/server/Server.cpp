@@ -14,6 +14,7 @@
 #include <iostream>
 #include <cerrno>
 #include <set>
+#include <utility>
 
 Server::Server(int port, const std::string &password) : _serverName("ircat"), _version("0.5"), _creationDate(std::string(__DATE__) + " " + __TIME__){
     _port = port;
@@ -261,11 +262,53 @@ void	Server::handleUser(Client &client, const std::string &rawMsg, const std::ve
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid realname");
 }
 
+std::string	Server::showClientsInChannel(Channel &channel)
+{
+	std::string	names;
+
+	for (std::set<int>::iterator it = channel.getClients().begin(); it != channel.getClients().end(); ++it)
+	{
+		std::set<int>::iterator next_it = it;
+		++next_it;
+		std::map<int, Client>::iterator client_it =_clients.find(*it);
+		std::cout << client_it->second.getNickname();
+		names += client_it->second.getNickname();
+		std::cout << "----> " << client_it->second.getNickname() << std::endl;
+		if (next_it != channel.getClients().end())
+			names += " ";
+	}
+	return names;
+}
+
+void	Server::handleJoin(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	std::string	res;
+
+	(void)rawMsg;
+	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " JOIN " + MSG_NEEDMOREPARAMS);
+		return ;
+	}
+	// bool isNewChannel = _channels.find(tokens[1]) != _channels.end() ? true : false;
+	// res = joinChannel(client, tokens[1], isNewChannel);	
+	
+	Channel channel(tokens[1]);
+	channel.addClient(client.getFd());
+	_channels.insert(std::pair<std::string, Channel>(tokens[1], channel));
+	
+	sendMessage(client.getFd(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " JOIN " + ":" + channel.getName());
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_NOTOPIC + " " + client.getNickname() + " " + channel.getName() + " " + ":No topic is set");
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_NAMREPLY + " " + client.getNickname() + " = " + channel.getName() + " " + ":"  + showClientsInChannel(channel));
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_ENDOFNAMES + " " + client.getNickname() + " " + channel.getName() + " :End of /NAMES list.");
+}
+
 void	Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
 	_cmdMap["NICK"] = &Server::handleNick;
 	_cmdMap["USER"] = &Server::handleUser;
+	_cmdMap["JOIN"] = &Server::handleJoin;
 }
 
 void    Server::handleClientData(int clientFd)

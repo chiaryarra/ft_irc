@@ -30,6 +30,11 @@ bool    Channel::isOperator(int clientFd) const
     return (_operators.count(clientFd));
 }
 
+const std::string &Channel::getName() const
+{
+	return _name;
+}
+
 const std::set<int> &Channel::getClients() const 
 {
     return _clients;
