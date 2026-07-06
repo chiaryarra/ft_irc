@@ -1,6 +1,7 @@
 #include "../../includes/server/Server.hpp"
 #include "../../includes/client/Client.hpp"
 #include "../../includes/utils/Utils.hpp"
+#include <cstddef>
 #include <sstream>
 #include <string>
 #include <sys/socket.h>
@@ -14,6 +15,7 @@
 #include <iostream>
 #include <cerrno>
 #include <set>
+#include <vector>
 
 Server::Server(int port, const std::string &password) : _serverName("ircat"), _version("0.5"), _creationDate(std::string(__DATE__) + " " + __TIME__){
     _port = port;
@@ -185,7 +187,7 @@ void	Server::sendWelcomeMessage(Client &client)
 	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_CREATED
 		+ " " + client.getNickname() + " :This server was created at " + _creationDate);
 	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_MYINFO
-		+ " " + _serverName + " " + _version + " o o");
+		+ " " + client.getNickname() + " " + _serverName + " " + _version + " o o");
 }
 
 void    Server::broadcastToChannel(const std::string &channelName, const std::string &message, int excludeFd)
@@ -203,23 +205,16 @@ void    Server::broadcastToChannel(const std::string &channelName, const std::st
     }
 }
 
-bool	Server::checkForParams(Client &client, std::string command, unsigned int size)
-{
-	if (size < 2)
-	{
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " " + command + " " + MSG_NEEDMOREPARAMS);
-		return (false);
-	}
-	return (true);
-}
-
 void	Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	std::string	res;
 	
 	(void)rawMsg;
-	if (!checkForParams(client, tokens[0], tokens.size()))
+	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PASS " + MSG_NEEDMOREPARAMS);
 		return ;
+	}
 	res = authPass(client, tokens[1], _password);
 	if (res.compare(ERR_ALREADYREGISTRED) == 0)
 		sendMessage(client.getFd(), ERR_ALREADYREGISTRED + " PASS " + ":You may not reregister");
@@ -235,8 +230,11 @@ void	Server::handleNick(Client &client, const std::string &rawMsg, const std::ve
 	std::string	res;
 
 	(void)rawMsg;
-	if (!checkForParams(client, tokens[0], tokens.size()))
+	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " NICK " + MSG_NEEDMOREPARAMS);
 		return ;
+	}
 	res = setClientNick(tokens[1], client, _clients);
 	if (res.compare(ERR_ERRONEUSNICKNAME) == 0)
 		sendMessage(client.getFd(), ERR_ERRONEUSNICKNAME + " NICK " + ":Erroneous Nickname");
@@ -249,8 +247,11 @@ void	Server::handleUser(Client &client, const std::string &rawMsg, const std::ve
 	std::string	res;
 
 	res = setClientUsername(rawMsg, tokens, client);
-	if (!checkForParams(client, tokens[0], tokens.size()))
+	if (tokens.size() < 5)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + MSG_NEEDMOREPARAMS);
 		return ;
+	}
 	if (res.compare(ERR_INVALIDUSERNAME) == 0)
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid username");
 	if (res.compare(ERR_INVALIDMODE) == 0)
@@ -261,11 +262,46 @@ void	Server::handleUser(Client &client, const std::string &rawMsg, const std::ve
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid realname");
 }
 
+void	Server::handleCap(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	(void)rawMsg;
+	(void)tokens;
+	std::cout << "Ignoring CAP command from FD: " << client.getFd() << std::endl;
+	return ;
+}
+
+void	Server::handlePing(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PING " + MSG_NEEDMOREPARAMS);
+		return ;
+	}
+	size_t pos = rawMsg.find_first_of(":");
+	if (pos != std::string::npos)
+		sendMessage(client.getFd(), "PONG " + rawMsg.substr(pos));
+	else
+	{
+		std::string	msg;
+		std::vector<std::string>::const_iterator last = tokens.end();
+		last++;
+		for (std::vector<std::string>::const_iterator it = tokens.begin() + 1; it != tokens.end(); ++it)
+		{
+			msg.append(*it);
+			if (it != last)
+				msg.append(" ");
+		}
+		sendMessage(client.getFd(), "PONG " + msg);
+	}
+}
+
 void	Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
 	_cmdMap["NICK"] = &Server::handleNick;
 	_cmdMap["USER"] = &Server::handleUser;
+	_cmdMap["CAP"] = &Server::handleCap;
+	_cmdMap["PING"] = &Server::handlePing;
 }
 
 void    Server::handleClientData(int clientFd)
