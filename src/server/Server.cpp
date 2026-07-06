@@ -274,7 +274,6 @@ std::string	Server::showClientsInChannel(Channel &channel)
 		std::map<int, Client>::iterator client_it =_clients.find(*it);
 		std::cout << client_it->second.getNickname();
 		names += client_it->second.getNickname();
-		std::cout << "----> " << client_it->second.getNickname() << std::endl;
 		if (next_it != channel.getClients().end())
 			names += " ";
 	}
@@ -291,17 +290,25 @@ void	Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " JOIN " + MSG_NEEDMOREPARAMS);
 		return ;
 	}
-	// bool isNewChannel = _channels.find(tokens[1]) != _channels.end() ? true : false;
-	// res = joinChannel(client, tokens[1], isNewChannel);	
+	bool isNewChannel = _channels.find(tokens[1]) != _channels.end() ? true : false;
+	res = joinChannel(client, tokens[1], isNewChannel);
 	
+	if (res.compare(ERR_NOSUCHCHANNEL) == 0)
+	{
+		sendMessage(client.getFd(), ERR_NOSUCHCHANNEL + " JOIN " + ":No such channel");
+		return ;
+	}
 	Channel channel(tokens[1]);
 	channel.addClient(client.getFd());
 	_channels.insert(std::pair<std::string, Channel>(tokens[1], channel));
-	
-	sendMessage(client.getFd(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " JOIN " + ":" + channel.getName());
-	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_NOTOPIC + " " + client.getNickname() + " " + channel.getName() + " " + ":No topic is set");
-	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_NAMREPLY + " " + client.getNickname() + " = " + channel.getName() + " " + ":"  + showClientsInChannel(channel));
-	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_ENDOFNAMES + " " + client.getNickname() + " " + channel.getName() + " :End of /NAMES list.");
+	sendMessage(client.getFd(), ":"
+		+ client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " JOIN " + ":" + channel.getName());
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_NOTOPIC 
+		+ " " + client.getNickname() + " " + channel.getName() + " " + ":No topic is set");
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_NAMREPLY
+		+ " " + client.getNickname() + " = " + channel.getName() + " " + ":"  + showClientsInChannel(channel));
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_ENDOFNAMES
+		+ " " + client.getNickname() + " " + channel.getName() + " :End of /NAMES list.");
 }
 
 void	Server::handleCap(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
