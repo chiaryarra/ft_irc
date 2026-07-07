@@ -83,12 +83,17 @@ void	Channel::setUserLimit(int limit)
 
 void	Channel::removeMode(char mode)
 {
-	_modes.erase(std::remove(_modes.begin(), _modes.end(), mode), _modes.end());
+	_modes.erase(std::remove(_modes.begin(), _modes.end(), mode), _modes.end()); // Need testing on mode removing method	
 }
 
 void	Channel::removeInvite(int clientFd)
 {
 	_inviteList.erase(clientFd);
+}
+
+void	Channel::removeOperator(int clientFd)
+{
+	_operators.erase(clientFd);
 }
 
 bool	Channel::isInvited(int clientFd) const
