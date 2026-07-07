@@ -1,48 +1,51 @@
 #ifndef CHANNEL_HPP
 #define CHANNEL_HPP
 
-#include <string>
 #include <set>
+#include <string>
 
 class Channel
 {
-private:
-    std::string		_name;
-    std::set<int>	_clients;
-    std::set<int>	_operators;
-	std::string		_topic;
-	std::string		_modes;
-	std::string		_key;
-	std::set<int>	_inviteList;
-	int				_userLimit;
-public:
-    Channel(const std::string &name);
+  private:
+	std::string _name;
+	std::set<int> _clients;
+	std::set<int> _operators;
+	std::string _topic;
+	std::string _modes;
+	std::string _key;
+	std::set<int> _inviteList;
+	int _userLimit;
+
+  public:
+	Channel();
+	Channel(const std::string &name);
+	Channel &operator=(const Channel &other);
 
 	const std::string &getName() const;
 	const std::set<int> &getClients() const;
-	const std::string	&getTopic() const;
-	const std::string	&getModes() const;
-	const std::string	&getKey() const;
-	const int			&getUserLimit() const;
-	
-	void	setTopic(std::string &topic);
-	void	setModes(std::string &modes);
-	void	setKey(std::string &key);
-	void	setUserLimit(int limit);
+	const std::string &getTopic() const;
+	const std::string &getModes() const;
+	const std::string &getKey() const;
+	const int &getUserLimit() const;
 
-	void	addClient(int clientFd);
-    void	addOperator(int clientFd);
-	void	addInvite(int clientFd);
-	void	addMode(char mode);
+	void setTopic(std::string &topic);
+	void setModes(std::string &modes);
+	void setKey(std::string &key);
+	void setUserLimit(int limit);
 
-	bool	isMember(int clientFd) const;
-    bool	isOperator(int clientFd) const;
-	bool	isInvited(int clientFd) const;
-	bool	hasMode(char mode) const;
+	void addClient(int clientFd);
+	void addOperator(int clientFd);
+	void addInvite(int clientFd);
+	void addMode(char mode);
 
-	void	removeMode(char mode);
-	void	removeInvite(int clientFd);
-    void	removeClient(int clientFd);
+	bool isMember(int clientFd) const;
+	bool isOperator(int clientFd) const;
+	bool isInvited(int clientFd) const;
+	bool hasMode(char mode) const;
+
+	void removeMode(char mode);
+	void removeInvite(int clientFd);
+	void removeClient(int clientFd);
 };
 
 #endif

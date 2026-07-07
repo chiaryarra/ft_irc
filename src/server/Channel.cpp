@@ -1,112 +1,81 @@
 #include "../../includes/server/Channel.hpp"
 #include <algorithm>
+#include <iostream>
+
+Channel::Channel() : _name() {}
 
 Channel::Channel(const std::string &name) : _name(name) {}
 
-void    Channel::addClient(int clientFd)
+Channel &Channel::operator=(const Channel &other)
 {
-    _clients.insert(clientFd);
+	if (this != &other)
+	{
+		_name = other._name;
+		_clients = other._clients;
+		_operators = other._operators;
+		_topic = other._topic;
+		_modes = other._modes;
+		_key = other._key;
+		_inviteList = other._inviteList;
+		_userLimit = other._userLimit;
+	}
+	return *this;
 }
 
-void    Channel::removeClient(int clientFd) 
+void Channel::addClient(int clientFd)
 {
-    _clients.erase(clientFd);
-    _operators.erase(clientFd);
+	_clients.insert(clientFd);
+	std::cout << "here " << _clients.size() << std::endl;
 }
 
-void    Channel::addOperator(int clientFd) 
+void Channel::removeClient(int clientFd)
 {
-    if (_clients.count(clientFd))
-        _operators.insert(clientFd);
+	_clients.erase(clientFd);
+	_operators.erase(clientFd);
 }
 
-bool    Channel::isMember(int clientFd) const 
+void Channel::addOperator(int clientFd)
 {
-    return (_clients.count(clientFd));
+	if (_clients.count(clientFd))
+		_operators.insert(clientFd);
 }
 
-bool    Channel::isOperator(int clientFd) const 
-{
-    return (_operators.count(clientFd));
-}
+bool Channel::isMember(int clientFd) const { return (_clients.count(clientFd)); }
 
-const std::string &Channel::getName() const
-{
-	return _name;
-}
+bool Channel::isOperator(int clientFd) const { return (_operators.count(clientFd)); }
 
-const std::set<int> &Channel::getClients() const 
-{
-    return _clients;
-}
+const std::string &Channel::getName() const { return _name; }
 
-const std::string	&Channel::getTopic() const
-{
-	return _topic;
-}
+const std::set<int> &Channel::getClients() const { return _clients; }
 
-const std::string	&Channel::getModes() const
-{
-	return _modes;
-}
+const std::string &Channel::getTopic() const { return _topic; }
 
-const std::string	&Channel::getKey() const
-{
-	return _key;
-}
+const std::string &Channel::getModes() const { return _modes; }
 
-const int	&Channel::getUserLimit() const
-{
-	return _userLimit;
-}
+const std::string &Channel::getKey() const { return _key; }
 
-void	Channel::setTopic(std::string &topic)
-{
-	_topic = topic;
-}
+const int &Channel::getUserLimit() const { return _userLimit; }
 
-void	Channel::setModes(std::string &modes)
-{
-	_modes = modes;
-}
+void Channel::setTopic(std::string &topic) { _topic = topic; }
 
-void	Channel::addMode(char mode)
+void Channel::setModes(std::string &modes) { _modes = modes; }
+
+void Channel::addMode(char mode)
 {
 	if (_modes.find(mode) != std::string::npos)
 		_modes += mode;
 }
 
-void	Channel::setKey(std::string &key)
-{
-	_key = key;
-}
+void Channel::setKey(std::string &key) { _key = key; }
 
-void	Channel::setUserLimit(int limit)
-{
-	_userLimit = limit;
-}
+void Channel::setUserLimit(int limit) { _userLimit = limit; }
 
-void	Channel::removeMode(char mode)
-{
-	_modes.erase(std::remove(_modes.begin(), _modes.end(), mode), _modes.end());
-}
+void Channel::removeMode(char mode) { _modes.erase(std::remove(_modes.begin(), _modes.end(), mode), _modes.end()); }
 
-void	Channel::removeInvite(int clientFd)
-{
-	_inviteList.erase(clientFd);
-}
+void Channel::removeInvite(int clientFd) { _inviteList.erase(clientFd); }
 
-bool	Channel::isInvited(int clientFd) const
-{
-	return (_inviteList.find(clientFd) != _inviteList.end());
-}
+bool Channel::isInvited(int clientFd) const { return (_inviteList.find(clientFd) != _inviteList.end()); }
 
-bool	Channel::hasMode(char mode) const
-{
-	return (_modes.find(mode) != std::string::npos);
-}
+bool Channel::hasMode(char mode) const { return (_modes.find(mode) != std::string::npos); }
 
-void	Channel::addInvite(int clientFd)
-{
-	_inviteList.insert(clientFd);
-}
+void Channel::addInvite(int clientFd) { _inviteList.insert(clientFd); }
