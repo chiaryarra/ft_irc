@@ -327,6 +327,11 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 	bool isNewChannel = _channels.find(tokens[1]) != _channels.end() ? true : false;
 	res = joinChannel(client, tokens[1], isNewChannel);
 
+	if (res.compare(ERR_NOTREGISTERED) == 0)
+	{
+		sendMessage(client.getFd(), ERR_NOTREGISTERED + " JOIN " + ":Not registered");
+		return;
+	}
 	if (res.compare(ERR_NOSUCHCHANNEL) == 0)
 	{
 		sendMessage(client.getFd(), ERR_NOSUCHCHANNEL + " JOIN " + ":No such channel");
@@ -334,7 +339,6 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 	}
 
 	std::map<std::string, Channel>::iterator it = _channels.find(tokens[1]);
-
 	if (it == _channels.end())
 	{
 		it = _channels.insert(std::pair<std::string, Channel>(tokens[1], Channel(tokens[1]))).first;
