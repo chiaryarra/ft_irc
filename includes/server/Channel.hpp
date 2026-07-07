@@ -23,6 +23,7 @@ class Channel
 
 	const std::string &getName() const;
 	const std::set<int> &getClients() const;
+	const std::set<int> &getOperators() const;
 	const std::string &getTopic() const;
 	const std::string &getModes() const;
 	const std::string &getKey() const;

@@ -2,9 +2,9 @@
 #include <algorithm>
 #include <iostream>
 
-Channel::Channel() : _name() {}
+Channel::Channel() : _name(), _clients(), _operators() {}
 
-Channel::Channel(const std::string &name) : _name(name) {}
+Channel::Channel(const std::string &name) : _name(name), _clients(), _operators() {}
 
 Channel &Channel::operator=(const Channel &other)
 {
@@ -47,6 +47,8 @@ bool Channel::isOperator(int clientFd) const { return (_operators.count(clientFd
 const std::string &Channel::getName() const { return _name; }
 
 const std::set<int> &Channel::getClients() const { return _clients; }
+
+const std::set<int> &Channel::getOperators() const { return _operators; };
 
 const std::string &Channel::getTopic() const { return _topic; }
 
