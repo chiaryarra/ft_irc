@@ -56,7 +56,7 @@ const std::string &Channel::getModes() const { return _modes; }
 
 const std::string &Channel::getKey() const { return _key; }
 
-const int &Channel::getUserLimit() const { return _userLimit; }
+const unsigned int &Channel::getUserLimit() const { return _userLimit; }
 
 void Channel::setTopic(std::string &topic) { _topic = topic; }
 
@@ -64,13 +64,13 @@ void Channel::setModes(std::string &modes) { _modes = modes; }
 
 void Channel::addMode(char mode)
 {
-	if (_modes.find(mode) != std::string::npos)
+	if (_modes.find(mode) == std::string::npos)
 		_modes += mode;
 }
 
-void Channel::setKey(std::string &key) { _key = key; }
+void Channel::setKey(std::string key) { _key = key; }
 
-void Channel::setUserLimit(int limit) { _userLimit = limit; }
+void Channel::setUserLimit(unsigned int limit) { _userLimit = limit; }
 
 void Channel::removeMode(char mode) { _modes.erase(std::remove(_modes.begin(), _modes.end(), mode), _modes.end()); }
 

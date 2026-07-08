@@ -14,7 +14,7 @@ class Channel
 	std::string _modes;
 	std::string _key;
 	std::set<int> _inviteList;
-	int _userLimit;
+	unsigned int _userLimit;
 
   public:
 	Channel();
@@ -27,12 +27,12 @@ class Channel
 	const std::string &getTopic() const;
 	const std::string &getModes() const;
 	const std::string &getKey() const;
-	const int &getUserLimit() const;
+	const unsigned int &getUserLimit() const;
 
 	void setTopic(std::string &topic);
 	void setModes(std::string &modes);
-	void setKey(std::string &key);
-	void setUserLimit(int limit);
+	void setKey(std::string key);
+	void setUserLimit(unsigned int limit);
 
 	void addClient(int clientFd);
 	void addOperator(int clientFd);

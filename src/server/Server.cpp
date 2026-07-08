@@ -316,9 +316,11 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 {
 	std::string res;
 	bool isNew;
+	bool isKeyPass;
 
 	(void)rawMsg;
 	isNew = false;
+	isKeyPass = false;
 	if (tokens.size() < 2)
 	{
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " JOIN " + MSG_NEEDMOREPARAMS);
@@ -346,6 +348,27 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 	}
 
 	Channel &channel = it->second;
+
+	if (tokens.size() >= 3)
+		isKeyPass = channel.getKey().compare(tokens[2]) == 0;
+
+	res = checkChannelMode(channel, client.getFd(), isKeyPass);
+	if (res.compare(ERR_CHANNELISFULL) == 0)
+	{
+		sendMessage(client.getFd(), res + " JOIN " + ":Channel is full");
+		return;
+	}
+	if (res.compare(ERR_INVITEONLYCHAN) == 0)
+	{
+		sendMessage(client.getFd(), ERR_INVITEONLYCHAN + " JOIN " + ":Client not invited");
+		return;
+	}
+	if (res.compare(ERR_BADCHANNELKEY) == 0)
+	{
+		sendMessage(client.getFd(), ERR_BADCHANNELKEY + " JOIN " + ":Wrong key");
+		return;
+	}
+
 	channel.addClient(client.getFd());
 	if (isNew)
 		channel.addOperator(client.getFd());
