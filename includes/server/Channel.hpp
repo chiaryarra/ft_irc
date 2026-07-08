@@ -29,7 +29,7 @@ class Channel
 	const std::string &getKey() const;
 	const unsigned int &getUserLimit() const;
 
-	void setTopic(std::string &topic);
+	void setTopic(std::string topic);
 	void setModes(std::string &modes);
 	void setKey(std::string key);
 	void setUserLimit(unsigned int limit);

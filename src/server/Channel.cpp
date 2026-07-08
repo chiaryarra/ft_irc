@@ -22,11 +22,7 @@ Channel &Channel::operator=(const Channel &other)
 	return *this;
 }
 
-void Channel::addClient(int clientFd)
-{
-	_clients.insert(clientFd);
-	std::cout << "here " << _clients.size() << std::endl;
-}
+void Channel::addClient(int clientFd) { _clients.insert(clientFd); }
 
 void Channel::removeClient(int clientFd)
 {
@@ -58,7 +54,7 @@ const std::string &Channel::getKey() const { return _key; }
 
 const unsigned int &Channel::getUserLimit() const { return _userLimit; }
 
-void Channel::setTopic(std::string &topic) { _topic = topic; }
+void Channel::setTopic(std::string topic) { _topic = topic; }
 
 void Channel::setModes(std::string &modes) { _modes = modes; }
 

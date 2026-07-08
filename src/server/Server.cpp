@@ -18,8 +18,7 @@
 #include <utility>
 #include <vector>
 
-Server::Server(int port, const std::string &password)
-    : _serverName("ircat"), _version("0.5"), _creationDate(std::string(__DATE__) + " " + __TIME__)
+Server::Server(int port, const std::string &password) : _serverName("ircat"), _version("0.5"), _creationDate(std::string(__DATE__) + " " + __TIME__)
 {
 	_port = port;
 	_password = password;
@@ -155,12 +154,9 @@ void Server::processClientBuffer(Client &client)
 			if (it != _cmdMap.end())
 				(this->*(it->second))(client, message, split_msg);
 			else
-				sendMessage(client.getFd(), ERR_UNKNOWNCOMMAND + " " +
-				                                (client.getNickname().empty() ? "*" : client.getNickname()) + " " +
-				                                split_msg[0] + " :Unknown command");
+				sendMessage(client.getFd(), ERR_UNKNOWNCOMMAND + " " + (client.getNickname().empty() ? "*" : client.getNickname()) + " " + split_msg[0] + " :Unknown command");
 		}
-		if (!client.getIsRegistered() && client.getIsAuthenticated() && !client.getNickname().empty() &&
-		    !client.getUsername().empty())
+		if (!client.getIsRegistered() && client.getIsAuthenticated() && !client.getNickname().empty() && !client.getUsername().empty())
 		{
 			sendWelcomeMessage(client);
 			client.setIsRegistered(true);
@@ -194,15 +190,10 @@ void Server::sendMessage(int clientFd, const std::string &message)
 
 void Server::sendWelcomeMessage(Client &client)
 {
-	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_WELCOME + " " + client.getNickname() +
-	                                " :Welcome to our IRC network " + client.getNickname() + "!" +
-	                                client.getUsername() + "@" + client.getHost());
-	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_YOURHOST + " " + client.getNickname() +
-	                                " :Your host is " + _serverName + ", running version " + _version);
-	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_CREATED + " " + client.getNickname() +
-	                                " :This server was created at " + _creationDate);
-	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_MYINFO + " " + client.getNickname() + " " + _serverName +
-	                                " " + _version + " o o");
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_WELCOME + " " + client.getNickname() + " :Welcome to our IRC network " + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost());
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_YOURHOST + " " + client.getNickname() + " :Your host is " + _serverName + ", running version " + _version);
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_CREATED + " " + client.getNickname() + " :This server was created at " + _creationDate);
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_MYINFO + " " + client.getNickname() + " " + _serverName + " " + _version + " o o");
 }
 
 void Server::broadcastToChannel(const std::string &channelName, const std::string &message, int excludeFd)
@@ -302,14 +293,10 @@ std::string Server::showClientsInChannel(Channel &channel)
 
 void Server::sendJoinMessage(Client &client, Channel &channel)
 {
-	sendMessage(client.getFd(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() +
-	                                " JOIN " + ":" + channel.getName());
-	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_NOTOPIC + " " + client.getNickname() + " " +
-	                                channel.getName() + " " + ":No topic is set");
-	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_NAMREPLY + " " + client.getNickname() + " = " +
-	                                channel.getName() + " " + ":" + showClientsInChannel(channel));
-	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_ENDOFNAMES + " " + client.getNickname() + " " +
-	                                channel.getName() + " :End of /NAMES list.");
+	sendMessage(client.getFd(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " JOIN " + ":" + channel.getName());
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_NOTOPIC + " " + client.getNickname() + " " + channel.getName() + " " + (channel.getTopic().empty() ? ":No topic is set" : channel.getTopic()));
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_NAMREPLY + " " + client.getNickname() + " = " + channel.getName() + " " + ":" + showClientsInChannel(channel));
+	sendMessage(client.getFd(), ":" + _serverName + " " + RPL_ENDOFNAMES + " " + client.getNickname() + " " + channel.getName() + " :End of /NAMES list.");
 }
 
 void Server::handleJoin(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
@@ -348,7 +335,6 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 	}
 
 	Channel &channel = it->second;
-
 	if (tokens.size() >= 3)
 		isKeyPass = channel.getKey().compare(tokens[2]) == 0;
 
