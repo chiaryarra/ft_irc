@@ -25,6 +25,7 @@ class Server
 	std::map<std::string, Channel> _channels;
 	typedef void (Server::*CommandHandler)(Client &, const std::string &, const std::vector<std::string> &);
 	std::map<std::string, CommandHandler> _cmdMap;
+	std::map<std::string, std::string> _errorDescriptions;
 
 	// Server private methods
 	void setupSocketOpts();
@@ -43,6 +44,7 @@ class Server
 	void sendWelcomeMessage(Client &client);
 	void broadcastToChannel(const std::string &channelName, const std::string &message, int excludeFd);
 	void initCommandMap();
+	void initErrorDescriptions();
 	void handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void handleNick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
@@ -51,6 +53,7 @@ class Server
 	void handlePing(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	bool checkForParams(Client &client, std::string commmand, unsigned int size);
 	void sendJoinMessage(Client &client, Channel &channel);
+	void sendError(Client &client, const std::string &command, const std::string &errorCode);
 	std::string showClientsInChannel(Channel &channel);
 
   public:

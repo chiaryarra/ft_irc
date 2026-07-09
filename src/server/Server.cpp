@@ -25,6 +25,7 @@ Server::Server(int port, const std::string &password) : _serverName("ircat"), _v
 	_serverSocketFd = -1;
 	_running = false;
 	initCommandMap();
+	initErrorDescriptions();
 }
 
 Server::~Server()
@@ -211,6 +212,13 @@ void Server::broadcastToChannel(const std::string &channelName, const std::strin
 	}
 }
 
+void Server::sendError(Client &client, const std::string &command, const std::string &errorCode)
+{
+	std::map<std::string, std::string>::iterator it = _errorDescriptions.find(errorCode);
+	if (it != _errorDescriptions.end())
+		sendMessage(client.getFd(), errorCode + " " + command + " " + it->second);
+}
+
 void Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	std::string res;
@@ -222,12 +230,11 @@ void Server::handlePass(Client &client, const std::string &rawMsg, const std::ve
 		return;
 	}
 	res = authPass(client, tokens[1], _password);
-	if (res.compare(ERR_ALREADYREGISTRED) == 0)
-		sendMessage(client.getFd(), ERR_ALREADYREGISTRED + " PASS " + ":You may not reregister");
-	if (res.compare(ERR_PASSWDMISMATCH) == 0)
+	if (!res.empty())
 	{
-		sendMessage(client.getFd(), ERR_PASSWDMISMATCH + " PASS " + ":Password incorrect");
-		removeClient(client.getFd());
+		sendError(client, "PASS", res);
+		if (res.compare(ERR_PASSWDMISMATCH) == 0)
+			removeClient(client.getFd());
 	}
 }
 
@@ -402,6 +409,23 @@ void Server::initCommandMap()
 	_cmdMap["JOIN"] = &Server::handleJoin;
 	_cmdMap["CAP"] = &Server::handleCap;
 	_cmdMap["PING"] = &Server::handlePing;
+}
+
+void Server::initErrorDescriptions()
+{
+	_errorDescriptions[ERR_ALREADYREGISTRED] = ":You may not reregister";
+	_errorDescriptions[ERR_PASSWDMISMATCH] = ":Password incorrect";
+	_errorDescriptions[ERR_ERRONEUSNICKNAME] = ":Erroneous Nickname";
+	_errorDescriptions[ERR_NICKNAMEINUSE] = ":Nickname is already in use";
+	_errorDescriptions[ERR_NOTREGISTERED] = ":Not registered";
+	_errorDescriptions[ERR_NOSUCHCHANNEL] = ":No such channel";
+	_errorDescriptions[ERR_CHANNELISFULL] = ":Channel is full";
+	_errorDescriptions[ERR_INVITEONLYCHAN] = ":Client not invited";
+	_errorDescriptions[ERR_BADCHANNELKEY] = ":Wrong key";
+	_errorDescriptions[ERR_INVALIDUSERNAME] = ":invalid username";
+	_errorDescriptions[ERR_INVALIDMODE] = ":invalid mode (not 0)";
+	_errorDescriptions[ERR_INVALIDUNUSED] = ":invalid unused (not *)";
+	_errorDescriptions[ERR_INVALIDREALNAME] = ":invalid realname";
 }
 
 void Server::handleClientData(int clientFd)
