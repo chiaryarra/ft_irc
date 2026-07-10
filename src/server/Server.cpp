@@ -249,10 +249,8 @@ void Server::handleNick(Client &client, const std::string &rawMsg, const std::ve
 		return;
 	}
 	res = setClientNick(tokens[1], client, _clients);
-	if (res.compare(ERR_ERRONEUSNICKNAME) == 0)
-		sendMessage(client.getFd(), ERR_ERRONEUSNICKNAME + " NICK " + ":Erroneous Nickname");
-	if (res.compare(ERR_NICKNAMEINUSE) == 0)
-		sendMessage(client.getFd(), ERR_NICKNAMEINUSE + " NICK " + ":Nickname is already in use");
+	if (!res.empty())
+		sendError(client, "NICK", res);
 }
 
 void Server::handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
