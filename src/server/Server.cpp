@@ -25,6 +25,7 @@ Server::Server(int port, const std::string &password) : _serverName("ircat"), _v
 	_serverSocketFd = -1;
 	_running = false;
 	initCommandMap();
+	initErrorDescriptions();
 }
 
 Server::~Server()
@@ -211,6 +212,13 @@ void Server::broadcastToChannel(const std::string &channelName, const std::strin
 	}
 }
 
+void Server::sendError(Client &client, const std::string &command, const std::string &errorCode)
+{
+	std::map<std::string, std::string>::iterator it = _errorDescriptions.find(errorCode);
+	if (it != _errorDescriptions.end())
+		sendMessage(client.getFd(), (errorCode == "900" || errorCode == "901" || errorCode == "902" || errorCode == "903" ? ERR_NEEDMOREPARAMS : errorCode) + " " + command + " " + it->second);
+}
+
 void Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	std::string res;
@@ -222,12 +230,11 @@ void Server::handlePass(Client &client, const std::string &rawMsg, const std::ve
 		return;
 	}
 	res = authPass(client, tokens[1], _password);
-	if (res.compare(ERR_ALREADYREGISTRED) == 0)
-		sendMessage(client.getFd(), ERR_ALREADYREGISTRED + " PASS " + ":You may not reregister");
-	if (res.compare(ERR_PASSWDMISMATCH) == 0)
+	if (!res.empty() && res.compare(RPL_SUCCESS) != 0)
 	{
-		sendMessage(client.getFd(), ERR_PASSWDMISMATCH + " PASS " + ":Password incorrect");
-		removeClient(client.getFd());
+		sendError(client, "PASS", res);
+		if (res.compare(ERR_PASSWDMISMATCH) == 0)
+			removeClient(client.getFd());
 	}
 }
 
@@ -242,30 +249,22 @@ void Server::handleNick(Client &client, const std::string &rawMsg, const std::ve
 		return;
 	}
 	res = setClientNick(tokens[1], client, _clients);
-	if (res.compare(ERR_ERRONEUSNICKNAME) == 0)
-		sendMessage(client.getFd(), ERR_ERRONEUSNICKNAME + " NICK " + ":Erroneous Nickname");
-	if (res.compare(ERR_NICKNAMEINUSE) == 0)
-		sendMessage(client.getFd(), ERR_NICKNAMEINUSE + " NICK " + ":Nickname is already in use");
+	if (!res.empty() && res.compare(RPL_SUCCESS) != 0)
+		sendError(client, "NICK", res);
 }
 
 void Server::handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	std::string res;
 
-	res = setClientUsername(rawMsg, tokens, client);
 	if (tokens.size() < 5)
 	{
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + MSG_NEEDMOREPARAMS);
 		return;
 	}
-	if (res.compare(ERR_INVALIDUSERNAME) == 0)
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid username");
-	if (res.compare(ERR_INVALIDMODE) == 0)
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid mode (not 0)");
-	if (res.compare(ERR_INVALIDUNUSED) == 0)
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid unused (not *)");
-	if (res.compare(ERR_INVALIDREALNAME) == 0)
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid realname");
+	res = setClientUsername(rawMsg, tokens, client);
+	if (!res.empty() && res.compare(RPL_SUCCESS) != 0)
+		sendError(client, "USER", res);
 }
 
 std::string Server::showClientsInChannel(Channel &channel)
@@ -315,15 +314,9 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 	}
 	bool isNewChannel = _channels.find(tokens[1]) != _channels.end() ? true : false;
 	res = joinChannel(client, tokens[1], isNewChannel);
-
-	if (res.compare(ERR_NOTREGISTERED) == 0)
+	if (!res.empty() && res.compare(RPL_SUCCESS) != 0)
 	{
-		sendMessage(client.getFd(), ERR_NOTREGISTERED + " JOIN " + ":Not registered");
-		return;
-	}
-	if (res.compare(ERR_NOSUCHCHANNEL) == 0)
-	{
-		sendMessage(client.getFd(), ERR_NOSUCHCHANNEL + " JOIN " + ":No such channel");
+		sendError(client, "JOIN", res);
 		return;
 	}
 
@@ -339,19 +332,9 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 		isKeyPass = channel.getKey().compare(tokens[2]) == 0;
 
 	res = checkChannelMode(channel, client.getFd(), isKeyPass);
-	if (res.compare(ERR_CHANNELISFULL) == 0)
+	if (!res.empty() && res.compare(RPL_SUCCESS) != 0)
 	{
-		sendMessage(client.getFd(), res + " JOIN " + ":Channel is full");
-		return;
-	}
-	if (res.compare(ERR_INVITEONLYCHAN) == 0)
-	{
-		sendMessage(client.getFd(), ERR_INVITEONLYCHAN + " JOIN " + ":Client not invited");
-		return;
-	}
-	if (res.compare(ERR_BADCHANNELKEY) == 0)
-	{
-		sendMessage(client.getFd(), ERR_BADCHANNELKEY + " JOIN " + ":Wrong key");
+		sendError(client, "JOIN", res);
 		return;
 	}
 
@@ -402,6 +385,23 @@ void Server::initCommandMap()
 	_cmdMap["JOIN"] = &Server::handleJoin;
 	_cmdMap["CAP"] = &Server::handleCap;
 	_cmdMap["PING"] = &Server::handlePing;
+}
+
+void Server::initErrorDescriptions()
+{
+	_errorDescriptions[ERR_ALREADYREGISTRED] = ":You may not reregister";
+	_errorDescriptions[ERR_PASSWDMISMATCH] = ":Password incorrect";
+	_errorDescriptions[ERR_ERRONEUSNICKNAME] = ":Erroneous Nickname";
+	_errorDescriptions[ERR_NICKNAMEINUSE] = ":Nickname is already in use";
+	_errorDescriptions[ERR_NOTREGISTERED] = ":Not registered";
+	_errorDescriptions[ERR_NOSUCHCHANNEL] = ":No such channel";
+	_errorDescriptions[ERR_CHANNELISFULL] = ":Channel is full";
+	_errorDescriptions[ERR_INVITEONLYCHAN] = ":Client not invited";
+	_errorDescriptions[ERR_BADCHANNELKEY] = ":Wrong key";
+	_errorDescriptions[ERR_INVALIDUSERNAME] = ":invalid username";
+	_errorDescriptions[ERR_INVALIDMODE] = ":invalid mode (not 0)";
+	_errorDescriptions[ERR_INVALIDUNUSED] = ":invalid unused (not *)";
+	_errorDescriptions[ERR_INVALIDREALNAME] = ":invalid realname";
 }
 
 void Server::handleClientData(int clientFd)
