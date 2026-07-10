@@ -230,7 +230,7 @@ void Server::handlePass(Client &client, const std::string &rawMsg, const std::ve
 		return;
 	}
 	res = authPass(client, tokens[1], _password);
-	if (!res.empty())
+	if (!res.empty() && res.compare(RPL_SUCCESS) != 0)
 	{
 		sendError(client, "PASS", res);
 		if (res.compare(ERR_PASSWDMISMATCH) == 0)
@@ -249,7 +249,7 @@ void Server::handleNick(Client &client, const std::string &rawMsg, const std::ve
 		return;
 	}
 	res = setClientNick(tokens[1], client, _clients);
-	if (!res.empty())
+	if (!res.empty() && res.compare(RPL_SUCCESS) != 0)
 		sendError(client, "NICK", res);
 }
 
@@ -263,7 +263,7 @@ void Server::handleUser(Client &client, const std::string &rawMsg, const std::ve
 		return;
 	}
 	res = setClientUsername(rawMsg, tokens, client);
-	if (!res.empty())
+	if (!res.empty() && res.compare(RPL_SUCCESS) != 0)
 		sendError(client, "USER", res);
 }
 
