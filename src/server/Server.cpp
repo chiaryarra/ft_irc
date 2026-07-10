@@ -314,15 +314,9 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 	}
 	bool isNewChannel = _channels.find(tokens[1]) != _channels.end() ? true : false;
 	res = joinChannel(client, tokens[1], isNewChannel);
-
-	if (res.compare(ERR_NOTREGISTERED) == 0)
+	if (!res.empty() && res.compare(RPL_SUCCESS) != 0)
 	{
-		sendMessage(client.getFd(), ERR_NOTREGISTERED + " JOIN " + ":Not registered");
-		return;
-	}
-	if (res.compare(ERR_NOSUCHCHANNEL) == 0)
-	{
-		sendMessage(client.getFd(), ERR_NOSUCHCHANNEL + " JOIN " + ":No such channel");
+		sendError(client, "JOIN", res);
 		return;
 	}
 
@@ -338,19 +332,9 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 		isKeyPass = channel.getKey().compare(tokens[2]) == 0;
 
 	res = checkChannelMode(channel, client.getFd(), isKeyPass);
-	if (res.compare(ERR_CHANNELISFULL) == 0)
+	if (!res.empty() && res.compare(RPL_SUCCESS) != 0)
 	{
-		sendMessage(client.getFd(), res + " JOIN " + ":Channel is full");
-		return;
-	}
-	if (res.compare(ERR_INVITEONLYCHAN) == 0)
-	{
-		sendMessage(client.getFd(), ERR_INVITEONLYCHAN + " JOIN " + ":Client not invited");
-		return;
-	}
-	if (res.compare(ERR_BADCHANNELKEY) == 0)
-	{
-		sendMessage(client.getFd(), ERR_BADCHANNELKEY + " JOIN " + ":Wrong key");
+		sendError(client, "JOIN", res);
 		return;
 	}
 
