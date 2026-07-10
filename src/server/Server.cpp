@@ -216,7 +216,7 @@ void Server::sendError(Client &client, const std::string &command, const std::st
 {
 	std::map<std::string, std::string>::iterator it = _errorDescriptions.find(errorCode);
 	if (it != _errorDescriptions.end())
-		sendMessage(client.getFd(), errorCode + " " + command + " " + it->second);
+		sendMessage(client.getFd(), (errorCode == "900" || errorCode == "901" || errorCode == "902" || errorCode == "903" ? ERR_NEEDMOREPARAMS : errorCode) + " " + command + " " + it->second);
 }
 
 void Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
@@ -257,20 +257,14 @@ void Server::handleUser(Client &client, const std::string &rawMsg, const std::ve
 {
 	std::string res;
 
-	res = setClientUsername(rawMsg, tokens, client);
 	if (tokens.size() < 5)
 	{
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + MSG_NEEDMOREPARAMS);
 		return;
 	}
-	if (res.compare(ERR_INVALIDUSERNAME) == 0)
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid username");
-	if (res.compare(ERR_INVALIDMODE) == 0)
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid mode (not 0)");
-	if (res.compare(ERR_INVALIDUNUSED) == 0)
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid unused (not *)");
-	if (res.compare(ERR_INVALIDREALNAME) == 0)
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + ":invalid realname");
+	res = setClientUsername(rawMsg, tokens, client);
+	if (!res.empty())
+		sendError(client, "USER", res);
 }
 
 std::string Server::showClientsInChannel(Channel &channel)
