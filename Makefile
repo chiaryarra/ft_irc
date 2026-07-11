@@ -5,7 +5,8 @@ CPP = c++
 FLAGS = -Wall -Werror -Wextra -std=c++98
 	   
 SRCS = src/general/main.cpp src/server/Server.cpp src/client/Client.cpp src/server/Channel.cpp \
-src/commands/PASS.cpp src/commands/NICK.cpp src/commands/USER.cpp src/commands/JOIN.cpp
+src/commands/PASS.cpp src/commands/NICK.cpp src/commands/USER.cpp src/commands/JOIN.cpp \
+src/commands/MODE.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
