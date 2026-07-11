@@ -377,6 +377,18 @@ void Server::handlePing(Client &client, const std::string &rawMsg, const std::ve
 	}
 }
 
+void Server::handleMode(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	std::string	res;
+
+	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PING " + MSG_NEEDMOREPARAMS);
+		return;
+	}
+
+}
+
 void Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
