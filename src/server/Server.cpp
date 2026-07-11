@@ -380,13 +380,38 @@ void Server::handlePing(Client &client, const std::string &rawMsg, const std::ve
 void Server::handleMode(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	std::string	res;
+	std::string	modes;
+	std::vector<std::string> params;
+	std::map<std::string, Channel>::iterator chanIt;
 
+
+	(void)rawMsg;
 	if (tokens.size() < 2)
 	{
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PING " + MSG_NEEDMOREPARAMS);
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " MODE " + MSG_NEEDMOREPARAMS);
+		return;
+	}
+	
+	chanIt = _channels.find(tokens[1]);
+	if (chanIt == _channels.end())
+	{
+		sendError(client, "MODE", ERR_NOSUCHCHANNEL);
 		return;
 	}
 
+	if (tokens.size() >= 3)
+		modes = tokens[2];
+	if (tokens.size() >= 4)
+		params = std::vector<std::string>(tokens.begin() + 3, tokens.end());
+	res = manageChannelMode(chanIt->second, modes, params);
+
+	if (res.compare(RPL_CHANNELMODEIS) == 0)
+		sendMessage(client.getFd(), ":" + _serverName + " " 
+			  + RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName() + " " 
+			  + (chanIt->second.getModes().empty() ? "" : chanIt->second.getModes())
+			  + (chanIt->second.getKey().empty() ? "" : " secret " + chanIt->second.getKey()));
+	else if (res.compare(RPL_SUCCESS) != 0)
+		sendError(client, "MODE", res);
 }
 
 void Server::initCommandMap()
@@ -397,6 +422,7 @@ void Server::initCommandMap()
 	_cmdMap["JOIN"] = &Server::handleJoin;
 	_cmdMap["CAP"] = &Server::handleCap;
 	_cmdMap["PING"] = &Server::handlePing;
+	_cmdMap["MODE"] = &Server::handleMode;
 }
 
 void Server::initErrorDescriptions()

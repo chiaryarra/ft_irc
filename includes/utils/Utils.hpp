@@ -61,5 +61,6 @@ std::string setClientNick(std::string nickname, Client &client, std::map<int, Cl
 std::string setClientUsername(std::string message, std::vector<std::string> split_msg, Client &client);
 std::string joinChannel(Client &client, std::string channelName, bool isNewChannel);
 std::string checkChannelMode(Channel &channel, int clientFd, bool isKeyPass);
+std::string	manageChannelMode(const Channel &channel, const std::string modes, const std::vector<std::string> params);
 
 #endif
