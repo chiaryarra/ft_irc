@@ -414,7 +414,7 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 	if (res.compare(RPL_CHANNELMODEIS) == 0)
 		sendMessage(client.getFd(), ":" + _serverName + " " 
 			  + RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName() + " " 
-			  + (chanIt->second.getModes().empty() ? "" : chanIt->second.getModes())
+			  + (chanIt->second.getModes().empty() ? "" : "+" + chanIt->second.getModes())
 			  + (chanIt->second.getKey().empty() ? "" : " secret " + chanIt->second.getKey()));
 	else if (res.compare(RPL_SUCCESS) != 0)
 		sendError(client, "MODE", res);

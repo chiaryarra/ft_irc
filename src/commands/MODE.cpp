@@ -86,6 +86,7 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 					{
 						case 'k':
 							addKey(channel, *paramIt);
+							channel.addMode(*next);
 							++paramIt;
 							break;
 						case 'o':
@@ -103,6 +104,7 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 							if (iss >> limit && iss.eof() && paramIt->at(0) != '-')
 							{
 								addUserLimit(channel, limit);
+								channel.addMode(*next);
 								++paramIt;
 							}
 							else
@@ -111,7 +113,6 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 						default:
 							return ERR_UNKNOWNMODE;
 					}
-					channel.addMode(*next);
 				}
 				else
 					channel.addMode(*next);
