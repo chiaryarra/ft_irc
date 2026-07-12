@@ -46,6 +46,8 @@ const std::set<int> &Channel::getClients() const { return _clients; }
 
 const std::set<int> &Channel::getOperators() const { return _operators; };
 
+// std::set<int> &Channel::getOperators() { return _operators; };
+
 const std::string &Channel::getTopic() const { return _topic; }
 
 const std::string &Channel::getModes() const { return _modes; }

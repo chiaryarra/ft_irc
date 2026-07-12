@@ -384,14 +384,12 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 	std::vector<std::string> params;
 	std::map<std::string, Channel>::iterator chanIt;
 
-
 	(void)rawMsg;
 	if (tokens.size() < 2)
 	{
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " MODE " + MSG_NEEDMOREPARAMS);
 		return;
 	}
-	
 	chanIt = _channels.find(tokens[1]);
 	if (chanIt == _channels.end())
 	{
@@ -403,14 +401,16 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 		modes = tokens[2];
 	if (tokens.size() >= 4)
 		params = std::vector<std::string>(tokens.begin() + 3, tokens.end());
-	res = manageChannelMode(chanIt->second, modes, params, chanIt->second.isMember(client.getFd()), chanIt->second.isOperator(client.getFd()));
+	res = manageChannelMode(chanIt->second, modes, params, _clients, chanIt->second.isMember(client.getFd()), chanIt->second.isOperator(client.getFd()));
 
 	
+	std::cout << "return -> " << res << std::endl;
 	std::cout << "key -> " << chanIt->second.getKey() << std::endl;
 	std::cout << "limit -> " << chanIt->second.getUserLimit() << std::endl;
 
 
-
+	for (std::set<int>::iterator it = chanIt->second.getOperators().begin(); it != chanIt->second.getOperators().end(); ++it) std::cout << "operator -> " << *it << std::endl;
+	
 	if (res.compare(RPL_CHANNELMODEIS) == 0)
 		sendMessage(client.getFd(), ":" + _serverName + " " 
 			  + RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName() + " " 
@@ -439,7 +439,11 @@ void Server::initErrorDescriptions()
 	_errorDescriptions[ERR_NICKNAMEINUSE] = ":Nickname is already in use";
 	_errorDescriptions[ERR_NOTREGISTERED] = ":Not registered";
 	_errorDescriptions[ERR_NOSUCHCHANNEL] = ":No such channel";
+	_errorDescriptions[ERR_NOTONCHANNEL] = ":You're not on that channel";
+	_errorDescriptions[ERR_NOSUCHNICK] = ":No such nick/channel";
 	_errorDescriptions[ERR_CHANNELISFULL] = ":Channel is full";
+	_errorDescriptions[ERR_CHANOPRIVSNEEDED] = ":You're not channel operator";
+	_errorDescriptions[ERR_USERNOTINCHANNEL] = ":They aren't on that channel";
 	_errorDescriptions[ERR_INVITEONLYCHAN] = ":Client not invited";
 	_errorDescriptions[ERR_BADCHANNELKEY] = ":Wrong key";
 	_errorDescriptions[ERR_INVALIDUSERNAME] = ":invalid username";
