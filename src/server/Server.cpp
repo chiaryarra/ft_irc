@@ -403,7 +403,12 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 		modes = tokens[2];
 	if (tokens.size() >= 4)
 		params = std::vector<std::string>(tokens.begin() + 3, tokens.end());
-	res = manageChannelMode(chanIt->second, modes, params);
+	res = manageChannelMode(chanIt->second, modes, params, chanIt->second.isOperator(client.getFd()));
+
+	
+	std::cout << "key -> " << chanIt->second.getKey() << std::endl;
+
+
 
 	if (res.compare(RPL_CHANNELMODEIS) == 0)
 		sendMessage(client.getFd(), ":" + _serverName + " " 
@@ -440,6 +445,7 @@ void Server::initErrorDescriptions()
 	_errorDescriptions[ERR_INVALIDMODE] = ":invalid mode (not 0)";
 	_errorDescriptions[ERR_INVALIDUNUSED] = ":invalid unused (not *)";
 	_errorDescriptions[ERR_INVALIDREALNAME] = ":invalid realname";
+	_errorDescriptions[ERR_UNKNOWNERROR] = ":unknown error";
 }
 
 void Server::handleClientData(int clientFd)
