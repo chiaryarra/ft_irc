@@ -1,4 +1,5 @@
 #include "../../includes/utils/Utils.hpp"
+#include <sstream>
 #include <vector>
 
 bool	needParam(char op, char mode)
@@ -28,17 +29,17 @@ void	addOperator(Channel &channel, std::string key)
 	(void)key;
 }
 
-void	addUserLimit(Channel &channel, std::string limit)
+void	addUserLimit(Channel &channel, unsigned int limit)
 {
-	(void)channel;
-	(void)limit;
-	
+	channel.setUserLimit(limit);
 }
 
 std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, bool isOperator)
 {
 	std::vector<std::string>::iterator paramIt;
 	std::string	validModes = "+-itkol";
+	unsigned int	limit;
+	std::stringstream iss;
 
 	paramIt = params.begin();
 	if (modes.empty() && params.size() == 0)
@@ -73,12 +74,12 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 							break;
 						case 'l':
 
-							// unsigned int	limit;
-
-
-
-
-							addUserLimit(channel, *paramIt);
+							iss.clear();
+							iss.str(*paramIt);
+							if (iss >> limit && iss.eof() && paramIt->at(0) != '-')
+								addUserLimit(channel, limit);
+							else
+								return ERR_UNKNOWNMODE;
 							break;
 						default:
 							return ERR_UNKNOWNMODE;

@@ -407,6 +407,7 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 
 	
 	std::cout << "key -> " << chanIt->second.getKey() << std::endl;
+	std::cout << "limit -> " << chanIt->second.getUserLimit() << std::endl;
 
 
 
