@@ -49,8 +49,7 @@ class Channel
 	void removeMode(char mode);
 	void removeInvite(int clientFd);
 	void removeClient(int clientFd);
-  void removeOperator(int clientFd);
-	
+	void removeOperator(int clientFd);
 };
 
 #endif

@@ -1,6 +1,5 @@
 #include "../../includes/server/Channel.hpp"
 #include <algorithm>
-#include <iostream>
 
 Channel::Channel() : _name(), _clients(), _operators() {}
 
@@ -30,6 +29,11 @@ void Channel::removeClient(int clientFd)
 	_operators.erase(clientFd);
 }
 
+void Channel::removeOperator(int clientFd)
+{
+	_operators.erase(clientFd);
+}
+
 void Channel::addOperator(int clientFd)
 {
 	if (_clients.count(clientFd))
@@ -45,8 +49,6 @@ const std::string &Channel::getName() const { return _name; }
 const std::set<int> &Channel::getClients() const { return _clients; }
 
 const std::set<int> &Channel::getOperators() const { return _operators; };
-
-// std::set<int> &Channel::getOperators() { return _operators; };
 
 const std::string &Channel::getTopic() const { return _topic; }
 

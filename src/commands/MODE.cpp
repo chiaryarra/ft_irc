@@ -27,6 +27,11 @@ void	addOperator(Channel &channel, Client client)
 	channel.addOperator(client.getFd());
 }
 
+void	removeOperator(Channel &channel, Client client)
+{
+	channel.removeOperator(client.getFd());
+}
+
 void	addUserLimit(Channel &channel, unsigned int limit)
 {
 	channel.setUserLimit(limit);
@@ -77,7 +82,8 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 				{
 					if (paramIt->size() == 0 || paramIt == params.end())
 						return ERR_NEEDMOREPARAMS;
-					switch (*next) {
+					switch (*next)
+					{
 						case 'k':
 							addKey(channel, *paramIt);
 							++paramIt;
@@ -108,9 +114,26 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 					channel.addMode(*next);
 				}
 				else
-				{
 					channel.addMode(*next);
-				}	
+			}
+			else if (*it == '-' && isValidMode(*next))
+			{
+				if (needParam(*it, *next))
+				{
+					if (paramIt->size() == 0 || paramIt == params.end())
+						return ERR_NEEDMOREPARAMS;
+					
+					clientIt = findClientByNick(clients, *paramIt);
+				
+					if (clientIt == clients.end())
+						return ERR_NOSUCHNICK;
+					if (!channel.isMember(clientIt->second.getFd()))
+						return ERR_USERNOTINCHANNEL;
+					removeOperator(channel, clientIt->second);
+					++paramIt;
+				}
+				else
+					channel.removeMode(*next);
 			}
 			else
 				return ERR_UNKNOWNMODE;
