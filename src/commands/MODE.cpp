@@ -34,7 +34,7 @@ void	addUserLimit(Channel &channel, unsigned int limit)
 	channel.setUserLimit(limit);
 }
 
-std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, bool isOperator)
+std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, bool isMember, bool isOperator)
 {
 	std::vector<std::string>::iterator paramIt;
 	std::string	validModes = "+-itkol";
@@ -44,6 +44,8 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 	paramIt = params.begin();
 	if (modes.empty() && params.size() == 0)
 		return RPL_CHANNELMODEIS;
+	if (!isMember)
+		return ERR_NOTONCHANNEL;
 	if (isOperator)
 	{
 		if (modes.find_first_not_of(validModes) != std::string::npos)

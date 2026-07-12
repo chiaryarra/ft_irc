@@ -403,7 +403,7 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 		modes = tokens[2];
 	if (tokens.size() >= 4)
 		params = std::vector<std::string>(tokens.begin() + 3, tokens.end());
-	res = manageChannelMode(chanIt->second, modes, params, chanIt->second.isOperator(client.getFd()));
+	res = manageChannelMode(chanIt->second, modes, params, chanIt->second.isMember(client.getFd()), chanIt->second.isOperator(client.getFd()));
 
 	
 	std::cout << "key -> " << chanIt->second.getKey() << std::endl;
