@@ -58,6 +58,10 @@ const std::string &Channel::getKey() const { return _key; }
 
 const unsigned int &Channel::getUserLimit() const { return _userLimit; }
 
+const bool Channel::isInviteOnly() const { return _inviteOnly; }
+
+const bool Channel::isTopicProtected() const { return _topicProtected; }
+
 void Channel::setTopic(std::string topic) { _topic = topic; }
 
 void Channel::setModes(std::string &modes) { _modes = modes; }
@@ -71,6 +75,10 @@ void Channel::addMode(char mode)
 void Channel::setKey(std::string key) { _key = key; }
 
 void Channel::setUserLimit(unsigned int limit) { _userLimit = limit; }
+
+void Channel::setInviteOnly(bool mode) { _inviteOnly = mode; }
+
+void Channel::setTopicProtected(bool mode) { _topicProtected = mode; }
 
 void Channel::removeMode(char mode) { _modes.erase(std::remove(_modes.begin(), _modes.end(), mode), _modes.end()); }
 
