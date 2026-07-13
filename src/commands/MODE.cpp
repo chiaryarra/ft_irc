@@ -32,12 +32,12 @@ void	solveTopicMode(Channel &channel, char mode, bool isAddMode)
 
 void	solveKeyMode(Channel &channel, char mode, std::string key, bool isAddMode)
 {
-	if (isAddMode)
+	if (isAddMode && channel.getKey().empty())
 	{
 		channel.setKey(key);
 		channel.addMode(mode);
 	}
-	else 
+	else if (!isAddMode) 
 	{
 		channel.setKey("");
 		channel.removeMode(mode);
