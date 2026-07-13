@@ -58,9 +58,9 @@ const std::string &Channel::getKey() const { return _key; }
 
 const unsigned int &Channel::getUserLimit() const { return _userLimit; }
 
-const bool Channel::isInviteOnly() const { return _inviteOnly; }
+const bool &Channel::isInviteOnly() const { return _inviteOnly; }
 
-const bool Channel::isTopicProtected() const { return _topicProtected; }
+const bool &Channel::isTopicProtected() const { return _topicProtected; }
 
 void Channel::setTopic(std::string topic) { _topic = topic; }
 

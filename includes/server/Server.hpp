@@ -54,7 +54,7 @@ class Server
 	void handleMode(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	bool checkForParams(Client &client, std::string commmand, unsigned int size);
 	void sendJoinMessage(Client &client, Channel &channel);
-	void sendError(Client &client, const std::string &command, const std::string &errorCode);
+	void sendError(Client &client, const std::string &command, const std::string &errorCode, const std::string &extra);
 	std::string showClientsInChannel(Channel &channel);
 
   public:

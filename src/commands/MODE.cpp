@@ -1,11 +1,10 @@
 #include "../../includes/utils/Utils.hpp"
+#include <iostream>
 #include <sstream>
 
-bool	needParam(char op, char mode)
+bool	needParam(char mode, bool isAddMode)
 {
-	if (op == '+' && (mode == 'k' || mode == 'o' || mode == 'l'))
-		return true;
-	if (op == '-' && mode == 'o')
+	if ((isAddMode && (mode == 'k' || mode == 'l')) || mode == 'o')
 		return true;
 	return false;
 }
@@ -17,14 +16,52 @@ bool	isValidMode(char mode)
 	return false;
 }
 
-void	addKey(Channel &channel, std::string key)
+void	solveInviteMode(Channel &channel, char mode, bool isAddMode)
 {
-	channel.setKey(key);
+	if (isAddMode)
+	{
+		channel.setInviteOnly(true);
+		channel.addMode(mode);
+	}
+	else 
+	{
+		channel.setInviteOnly(false);
+		channel.removeMode(mode);
+	}
 }
 
-void	addOperator(Channel &channel, Client client)
+void	solveTopicMode(Channel &channel, char mode, bool isAddMode)
 {
-	channel.addOperator(client.getFd());
+	if (isAddMode)
+	{
+		channel.setTopicProtected(true);
+		channel.addMode(mode);
+	}
+	else
+	{
+		channel.setTopicProtected(false);
+		channel.removeMode(mode);
+	}
+}
+
+void	solveKeyMode(Channel &channel, char mode, std::string key, bool isAddMode)
+{
+	if (isAddMode)
+	{
+		channel.setKey(key);
+		channel.addMode(mode);
+	}
+	else 
+	{
+		channel.setKey("");
+		channel.removeMode(mode);
+	}
+	
+}
+
+void	solveOperatorMode(Channel &channel, Client client, bool isAddMode)
+{
+	isAddMode ? channel.addOperator(client.getFd()) : channel.removeOperator(client.getFd());
 }
 
 void	removeOperator(Channel &channel, Client client)
@@ -32,9 +69,18 @@ void	removeOperator(Channel &channel, Client client)
 	channel.removeOperator(client.getFd());
 }
 
-void	addUserLimit(Channel &channel, unsigned int limit)
+void	solveLimitMode(Channel &channel, char mode, unsigned int limit, bool isAddMode)
 {
-	channel.setUserLimit(limit);
+	if (isAddMode)
+	{
+		channel.setUserLimit(limit);
+		channel.addMode(mode);
+	}
+	else
+	{
+		channel.setUserLimit(0);
+		channel.removeMode(mode);
+	}
 }
 
 std::map<int, Client>::iterator	findClientByNick(std::map<int, Client> &clients, std::string &nick)
@@ -57,8 +103,11 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 	std::map<int, Client>::iterator		clientIt;
 	std::vector<std::string>::iterator	paramIt;
 
+	bool								addMode;
+
 	paramIt = params.begin();
-	validModes = "+-itkol";
+	validModes = "itkol";
+	addMode = false;
 	if (modes.empty() && params.size() == 0)
 		return RPL_CHANNELMODEIS;
 	if (!isMember)
@@ -66,18 +115,98 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 
 	if (isOperator)
 	{
-		if (modes.find_first_not_of(validModes) != std::string::npos)
-			return ERR_UNKNOWNMODE;
+		// if (modes.find_first_not_of(validModes) != std::string::npos)
+		// 	return ERR_UNKNOWNMODE;
 		if (modes.at(0) != '+' && modes.at(0) != '-')
-			return ERR_NEEDMOREPARAMS;
+			return ERR_UNKNOWNMODE + " " + modes.at(0);
 		for (std::string::iterator it = modes.begin(); it != modes.end(); ++it)
 		{
-			std::string::iterator next = it;
-			++next;
-			if (next == modes.end())
+			// std::string::iterator next = it;
+			// ++next;
+
+			// if (next == modes.end())
+			// 	continue;
+
+			if (*it == '+')
+			{
+				addMode = true;
 				continue;
+			}
+			if (*it == '-')
+			{
+				addMode = false;
+				continue;
+			}
+			
+			if (validModes.find_first_of(*it) != std::string::npos)
+			{
+				// if (needParam(*it, addMode))
+				// {
+					
+					// if (params.size() == 0 || paramIt == params.end())
+					// 	return ERR_NEEDMOREPARAMS;
+					
+
+					switch (*it)
+					{
+						case 'i':
+							solveInviteMode(channel, *it, addMode);
+							break;
+						case 't':
+
+
+							solveTopicMode(channel, *it, addMode);
+							break;
+						case 'k':
+							if (params.size() == 0 || paramIt == params.end())
+								return ERR_NEEDMOREPARAMS;
+							solveKeyMode(channel, *it, *paramIt, addMode);
+							++paramIt;
+							break;
+						case 'o':
+							if (params.size() == 0 || paramIt == params.end())
+								return ERR_NEEDMOREPARAMS;
+							clientIt = findClientByNick(clients, *paramIt);
+							if (clientIt == clients.end())
+								return ERR_NOSUCHNICK;
+							if (!channel.isMember(clientIt->second.getFd()))
+								return ERR_USERNOTINCHANNEL;
+							solveOperatorMode(channel, clientIt->second, addMode);
+							++paramIt;
+							break;
+						case 'l':
+							if (addMode && (params.size() == 0 || paramIt == params.end()))
+								return ERR_NEEDMOREPARAMS;
+							iss.clear();
+							iss.str(*paramIt);
+							if (iss >> limit && iss.eof() && paramIt->at(0) != '-')
+							{
+								solveLimitMode(channel, *it, limit, addMode);
+								++paramIt;
+							}
+							else
+								return ERR_UNKNOWNERROR;
+							break;
+						default:
+							return ERR_UNKNOWNMODE + " " + *it;
+					}
+				// }
+
+			}
+			else
+				return ERR_UNKNOWNMODE + " " + *it;
+			
+			
+
+
+
+			/*
 			if (*it == '+' && isValidMode(*next))
 			{
+
+				if (validModes.find_first_of(*next) == std::string::npos)
+					return ERR_UNKNOWNMODE + " " + *next;
+
 				if (needParam(*it, *next))
 				{
 					if (paramIt->size() == 0 || paramIt == params.end())
@@ -108,10 +237,10 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 								++paramIt;
 							}
 							else
-								return ERR_UNKNOWNMODE;
+								return ERR_UNKNOWNERROR;
 							break;
 						default:
-							return ERR_UNKNOWNMODE;
+							return ERR_UNKNOWNMODE + " " + *next;
 					}
 				}
 				else
@@ -119,6 +248,10 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 			}
 			else if (*it == '-' && isValidMode(*next))
 			{
+
+				if (validModes.find_first_of(*next) == std::string::npos)
+					return ERR_UNKNOWNMODE + " " + *next;
+
 				if (needParam(*it, *next))
 				{
 					if (paramIt->size() == 0 || paramIt == params.end())
@@ -137,7 +270,8 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 					channel.removeMode(*next);
 			}
 			else
-				return ERR_UNKNOWNMODE;
+				return ERR_UNKNOWNMODE + " " + *it;
+			*/
 		}
 	}
 	else

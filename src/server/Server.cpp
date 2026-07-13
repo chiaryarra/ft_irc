@@ -212,11 +212,15 @@ void Server::broadcastToChannel(const std::string &channelName, const std::strin
 	}
 }
 
-void Server::sendError(Client &client, const std::string &command, const std::string &errorCode)
+void Server::sendError(Client &client, const std::string &command, const std::string &errorCode, const std::string &extra = "")
 {
 	std::map<std::string, std::string>::iterator it = _errorDescriptions.find(errorCode);
 	if (it != _errorDescriptions.end())
-		sendMessage(client.getFd(), (errorCode == "900" || errorCode == "901" || errorCode == "902" || errorCode == "903" ? ERR_NEEDMOREPARAMS : errorCode) + " " + command + " " + it->second);
+		sendMessage(client.getFd(), 
+			  (errorCode == "900" || errorCode == "901" || errorCode == "902" || errorCode == "903" ? ERR_NEEDMOREPARAMS : errorCode)
+			  + " " + command 
+			  + " " + extra + (extra.empty() ? "" : " ")
+			  + it->second);
 }
 
 void Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
@@ -416,6 +420,8 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 			  + RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName() + " " 
 			  + (chanIt->second.getModes().empty() ? "" : "+" + chanIt->second.getModes())
 			  + (chanIt->second.getKey().empty() ? "" : " secret " + chanIt->second.getKey()));
+	else if (res.find(ERR_UNKNOWNMODE) == 0 && res.size() > ERR_UNKNOWNMODE.size())
+		sendError(client, "MODE", ERR_UNKNOWNMODE, res.substr(ERR_UNKNOWNMODE.size() + 1));
 	else if (res.compare(RPL_SUCCESS) != 0)
 		sendError(client, "MODE", res);
 }
@@ -450,6 +456,8 @@ void Server::initErrorDescriptions()
 	_errorDescriptions[ERR_INVALIDMODE] = ":invalid mode (not 0)";
 	_errorDescriptions[ERR_INVALIDUNUSED] = ":invalid unused (not *)";
 	_errorDescriptions[ERR_INVALIDREALNAME] = ":invalid realname";
+	_errorDescriptions[ERR_UNKNOWNMODE] = ":is unknown mode char to me";
+	_errorDescriptions[ERR_NEEDMOREPARAMS] = ":not enough parameters";
 	_errorDescriptions[ERR_UNKNOWNERROR] = ":unknown error";
 }
 
