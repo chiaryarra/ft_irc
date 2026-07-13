@@ -400,26 +400,21 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 		sendError(client, "MODE", ERR_NOSUCHCHANNEL);
 		return;
 	}
-
 	if (tokens.size() >= 3)
 		modes = tokens[2];
 	if (tokens.size() >= 4)
 		params = std::vector<std::string>(tokens.begin() + 3, tokens.end());
+
 	res = manageChannelMode(chanIt->second, modes, params, _clients, chanIt->second.isMember(client.getFd()), chanIt->second.isOperator(client.getFd()));
-
-	
-	std::cout << "return -> " << res << std::endl;
-	std::cout << "key -> " << chanIt->second.getKey() << std::endl;
-	std::cout << "limit -> " << chanIt->second.getUserLimit() << std::endl;
-
 
 	for (std::set<int>::iterator it = chanIt->second.getOperators().begin(); it != chanIt->second.getOperators().end(); ++it) std::cout << "operator -> " << *it << std::endl;
 	
 	if (res.compare(RPL_CHANNELMODEIS) == 0)
 		sendMessage(client.getFd(), ":" + _serverName + " " 
-			  + RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName() + " " 
-			  + (chanIt->second.getModes().empty() ? "" : "+" + chanIt->second.getModes())
-			  + (chanIt->second.getKey().empty() ? "" : " secret " + chanIt->second.getKey()));
+			+ RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName() + " " 
+			+ (chanIt->second.getModes().empty() ? "" : "+" + chanIt->second.getModes())
+			+ (chanIt->second.getKey().empty() ? "" : " " + chanIt->second.getKey())
+			+ (chanIt->second.getUserLimit() == 0 ? "" : " " + chanIt->second.getUserLimitStr()));
 	else if (res.find(ERR_UNKNOWNMODE) == 0 && res.size() > ERR_UNKNOWNMODE.size())
 		sendError(client, "MODE", ERR_UNKNOWNMODE, res.substr(ERR_UNKNOWNMODE.size() + 1));
 	else if (res.compare(RPL_SUCCESS) != 0)

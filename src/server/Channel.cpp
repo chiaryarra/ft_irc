@@ -1,9 +1,10 @@
 #include "../../includes/server/Channel.hpp"
 #include <algorithm>
+#include <sstream>
 
-Channel::Channel() : _name(), _clients(), _operators() {}
+Channel::Channel() : _name(), _clients(), _operators(), _userLimit(0) {}
 
-Channel::Channel(const std::string &name) : _name(name), _clients(), _operators() {}
+Channel::Channel(const std::string &name) : _name(name), _clients(), _operators(), _userLimit(0) {}
 
 Channel &Channel::operator=(const Channel &other)
 {
@@ -69,7 +70,30 @@ void Channel::setModes(std::string &modes) { _modes = modes; }
 void Channel::addMode(char mode)
 {
 	if (_modes.find(mode) == std::string::npos)
-		_modes += mode;
+	{
+		switch (mode)
+		{
+			case 'l':
+				_modes.push_back(mode);
+				break;
+			case 'k':
+				if (_modes.size() >= 2)
+					_modes.insert(_modes.size() - 2, 1, mode); 
+				else
+					_modes.push_back(mode);
+			break;
+			default:
+				_modes.insert(0, 1, mode);
+		}
+	}
+}
+
+const std::string Channel::getUserLimitStr() const
+{
+	std::ostringstream oss;
+
+	oss << _userLimit;
+	return oss.str();
 }
 
 void Channel::setKey(std::string key) { _key = key; }

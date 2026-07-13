@@ -32,6 +32,7 @@ class Channel
 	const unsigned int &getUserLimit() const;
 	const bool &isInviteOnly() const;
 	const bool &isTopicProtected() const;
+	const std::string getUserLimitStr() const;
 	
 	void setTopic(std::string topic);
 	void setModes(std::string &modes);
