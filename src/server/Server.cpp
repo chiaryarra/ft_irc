@@ -216,8 +216,9 @@ void Server::sendError(Client &client, const std::string &command, const std::st
 {
 	std::map<std::string, std::string>::iterator it = _errorDescriptions.find(errorCode);
 	if (it != _errorDescriptions.end())
-		sendMessage(client.getFd(), 
-			  (errorCode == "900" || errorCode == "901" || errorCode == "902" || errorCode == "903" ? ERR_NEEDMOREPARAMS : errorCode)
+		sendMessage(client.getFd(),
+			  ":" + _serverName + " "
+			  + (errorCode == "900" || errorCode == "901" || errorCode == "902" || errorCode == "903" ? ERR_NEEDMOREPARAMS : errorCode)
 			  + " " + command 
 			  + " " + extra + (extra.empty() ? "" : " ")
 			  + it->second);
