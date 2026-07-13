@@ -56,6 +56,7 @@ class Server
 	void sendJoinMessage(Client &client, Channel &channel);
 	void sendError(Client &client, const std::string &command, const std::string &errorCode, const std::string &extra);
 	std::string showClientsInChannel(Channel &channel);
+	std::string showChannelModes(Channel &channel);
 
   public:
 	// Constructors

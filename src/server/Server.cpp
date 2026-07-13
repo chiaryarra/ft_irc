@@ -219,7 +219,7 @@ void Server::sendError(Client &client, const std::string &command, const std::st
 		sendMessage(client.getFd(),
 			  ":" + _serverName + " "
 			  + (errorCode == "900" || errorCode == "901" || errorCode == "902" || errorCode == "903" ? ERR_NEEDMOREPARAMS : errorCode)
-			  + " " + command 
+			  + " " + command
 			  + " " + extra + (extra.empty() ? "" : " ")
 			  + it->second);
 }
@@ -278,7 +278,6 @@ std::string Server::showClientsInChannel(Channel &channel)
 
 	for (std::set<int>::iterator it = channel.getClients().begin(); it != channel.getClients().end(); ++it)
 	{
-
 		std::set<int>::iterator next_it = it;
 		++next_it;
 		std::map<int, Client>::iterator client_it = _clients.find(*it);
@@ -293,6 +292,17 @@ std::string Server::showClientsInChannel(Channel &channel)
 			names += " ";
 	}
 	return names;
+}
+
+std::string Server::showChannelModes(Channel &channel)
+{
+	std::string message;
+
+	message += channel.getModes().empty() ? "" : "+" + channel.getModes();
+	message += channel.getKey().empty() ? "" : " " + channel.getKey();
+	message += channel.getUserLimit() == 0 ? "" : " " + channel.getUserLimitStr();
+
+	return message;
 }
 
 void Server::sendJoinMessage(Client &client, Channel &channel)
@@ -413,13 +423,16 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 	if (res.compare(RPL_CHANNELMODEIS) == 0)
 		sendMessage(client.getFd(), ":" + _serverName + " " 
 			+ RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName() + " " 
-			+ (chanIt->second.getModes().empty() ? "" : "+" + chanIt->second.getModes())
-			+ (chanIt->second.getKey().empty() ? "" : " " + chanIt->second.getKey())
-			+ (chanIt->second.getUserLimit() == 0 ? "" : " " + chanIt->second.getUserLimitStr()));
+			+ showChannelModes(chanIt->second));
 	else if (res.find(ERR_UNKNOWNMODE) == 0 && res.size() > ERR_UNKNOWNMODE.size())
 		sendError(client, "MODE", ERR_UNKNOWNMODE, res.substr(ERR_UNKNOWNMODE.size() + 1));
 	else if (res.compare(RPL_SUCCESS) != 0)
 		sendError(client, "MODE", res);
+	broadcastToChannel(
+		chanIt->second.getName(),
+			":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " MODE " + chanIt->second.getName() + " "
+					+ showChannelModes(chanIt->second),
+		client.getFd());
 }
 
 void Server::initCommandMap()
