@@ -216,12 +216,7 @@ void Server::sendError(Client &client, const std::string &command, const std::st
 {
 	std::map<std::string, std::string>::iterator it = _errorDescriptions.find(errorCode);
 	if (it != _errorDescriptions.end())
-		sendMessage(client.getFd(),
-			  ":" + _serverName + " "
-			  + (errorCode == "900" || errorCode == "901" || errorCode == "902" || errorCode == "903" ? ERR_NEEDMOREPARAMS : errorCode)
-			  + " " + command
-			  + " " + extra + (extra.empty() ? "" : " ")
-			  + it->second);
+		sendMessage(client.getFd(), ":" + _serverName + " " + (errorCode == "900" || errorCode == "901" || errorCode == "902" || errorCode == "903" ? ERR_NEEDMOREPARAMS : errorCode) + " " + command + " " + extra + (extra.empty() ? "" : " ") + it->second);
 }
 
 void Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
@@ -394,8 +389,8 @@ void Server::handlePing(Client &client, const std::string &rawMsg, const std::ve
 
 void Server::handleMode(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
-	std::string	res;
-	std::string	modes;
+	std::string res;
+	std::string modes;
 	std::vector<std::string> params;
 	std::map<std::string, Channel>::iterator chanIt;
 
@@ -418,21 +413,25 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 
 	res = manageChannelMode(chanIt->second, modes, params, _clients, chanIt->second.isMember(client.getFd()), chanIt->second.isOperator(client.getFd()));
 
-	for (std::set<int>::iterator it = chanIt->second.getOperators().begin(); it != chanIt->second.getOperators().end(); ++it) std::cout << "operator -> " << *it << std::endl;
-	
+	for (std::set<int>::iterator it = chanIt->second.getOperators().begin(); it != chanIt->second.getOperators().end(); ++it)
+		std::cout << "operator -> " << *it << std::endl;
+
 	if (res.compare(RPL_CHANNELMODEIS) == 0)
-		sendMessage(client.getFd(), ":" + _serverName + " " 
-			+ RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName() + " " 
-			+ showChannelModes(chanIt->second));
+	{
+		sendMessage(client.getFd(), ":" + _serverName + " " + RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName() + " " + showChannelModes(chanIt->second));
+		return;
+	}
 	else if (res.find(ERR_UNKNOWNMODE) == 0 && res.size() > ERR_UNKNOWNMODE.size())
+	{
 		sendError(client, "MODE", ERR_UNKNOWNMODE, res.substr(ERR_UNKNOWNMODE.size() + 1));
+		return;
+	}
 	else if (res.compare(RPL_SUCCESS) != 0)
+	{
 		sendError(client, "MODE", res);
-	broadcastToChannel(
-		chanIt->second.getName(),
-			":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " MODE " + chanIt->second.getName() + " "
-					+ showChannelModes(chanIt->second),
-		client.getFd());
+		return;
+	}
+	broadcastToChannel(chanIt->second.getName(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " MODE " + chanIt->second.getName() + " " + showChannelModes(chanIt->second), client.getFd());
 }
 
 void Server::initCommandMap()
