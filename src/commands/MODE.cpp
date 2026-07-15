@@ -106,24 +106,20 @@ void appendModeChange(std::string &modeChange, char mode, bool addMode, bool &ch
 
 std::string manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, std::map<int, Client> &clients, bool isMember, bool isOperator, std::string &modeChange)
 {
-	bool addMode;
-	unsigned int limit;
-	std::string validModes;
-	std::stringstream iss;
-	std::map<int, Client>::iterator clientIt;
-	std::vector<std::string>::iterator paramIt;
-	std::string paramChange;
+	bool								addMode;
+	bool								changeFlag;
+	unsigned int						limit;
+	std::string							paramChange;
+	std::stringstream					iss;
+	std::map<int, Client>::iterator		clientIt;
+	std::vector<std::string>::iterator	paramIt;
 
 	limit = 0;
 	paramIt = params.begin();
-	validModes = "itkol";
 	if (modes.empty() && params.size() == 0)
 		return RPL_CHANNELMODEIS;
 	if (!isMember)
 		return ERR_NOTONCHANNEL;
-
-	bool changeFlag;
-
 	if (isOperator)
 	{
 		if (modes.at(0) != '+' && modes.at(0) != '-')
@@ -145,7 +141,7 @@ std::string manageChannelMode(Channel &channel, std::string modes, std::vector<s
 				addMode = false;
 				continue;
 			}
-			if (validModes.find_first_of(*it) != std::string::npos)
+			if (std::string("itkol").find_first_of(*it) != std::string::npos)
 			{
 				switch (*it)
 				{
