@@ -30,10 +30,7 @@ void Channel::removeClient(int clientFd)
 	_operators.erase(clientFd);
 }
 
-void Channel::removeOperator(int clientFd)
-{
-	_operators.erase(clientFd);
-}
+void Channel::removeOperator(int clientFd) { _operators.erase(clientFd); }
 
 void Channel::addOperator(int clientFd)
 {
@@ -67,25 +64,27 @@ void Channel::setTopic(std::string topic) { _topic = topic; }
 
 void Channel::setModes(std::string &modes) { _modes = modes; }
 
-void Channel::addMode(char mode)
+bool Channel::addMode(char mode)
 {
 	if (_modes.find(mode) == std::string::npos)
 	{
 		switch (mode)
 		{
-			case 'l':
-				_modes.push_back(mode);
-				break;
-			case 'k':
-				if (_modes.size() >= 2)
-					_modes.insert(_modes.size() - 2, 1, mode); 
-				else
-					_modes.push_back(mode);
+		case 'l':
+			_modes.push_back(mode);
 			break;
-			default:
+		case 'k':
+			if (_modes.size() >= 2)
 				_modes.insert(0, 1, mode);
+			else
+				_modes.push_back(mode);
+			break;
+		default:
+			_modes.insert(0, 1, mode);
 		}
+		return true;
 	}
+	return false;
 }
 
 const std::string Channel::getUserLimitStr() const
@@ -104,7 +103,15 @@ void Channel::setInviteOnly(bool mode) { _inviteOnly = mode; }
 
 void Channel::setTopicProtected(bool mode) { _topicProtected = mode; }
 
-void Channel::removeMode(char mode) { _modes.erase(std::remove(_modes.begin(), _modes.end(), mode), _modes.end()); }
+bool Channel::removeMode(char mode)
+{
+	if (_modes.find_first_of(mode) != std::string::npos)
+	{
+		_modes.erase(std::remove(_modes.begin(), _modes.end(), mode), _modes.end());
+		return true;
+	}
+	return false;
+}
 
 void Channel::removeInvite(int clientFd) { _inviteList.erase(clientFd); }
 

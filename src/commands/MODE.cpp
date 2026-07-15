@@ -2,73 +2,87 @@
 #include <iostream>
 #include <sstream>
 
-void	solveInviteMode(Channel &channel, char mode, bool isAddMode)
+bool solveInviteMode(Channel &channel, char mode, bool isAddMode)
 {
 	if (isAddMode)
 	{
 		channel.setInviteOnly(true);
-		channel.addMode(mode);
+		return (channel.addMode(mode));
 	}
-	else 
+	else
 	{
 		channel.setInviteOnly(false);
-		channel.removeMode(mode);
+		return (channel.removeMode(mode));
 	}
 }
 
-void	solveTopicMode(Channel &channel, char mode, bool isAddMode)
+bool solveTopicMode(Channel &channel, char mode, bool isAddMode)
 {
 	if (isAddMode)
 	{
 		channel.setTopicProtected(true);
-		channel.addMode(mode);
+		return (channel.addMode(mode));
 	}
 	else
 	{
 		channel.setTopicProtected(false);
-		channel.removeMode(mode);
+		return (channel.removeMode(mode));
 	}
 }
 
-void	solveKeyMode(Channel &channel, char mode, std::string key, bool isAddMode)
+bool solveKeyMode(Channel &channel, char mode, std::string key, bool isAddMode)
 {
 	if (isAddMode && channel.getKey().empty())
 	{
 		channel.setKey(key);
-		channel.addMode(mode);
+		return (channel.addMode(mode));
 	}
-	else if (!isAddMode) 
+	else if (!isAddMode)
 	{
 		channel.setKey("");
-		channel.removeMode(mode);
+		return (channel.removeMode(mode));
 	}
+	return false;
 }
 
-void	solveOperatorMode(Channel &channel, Client client, bool isAddMode)
-{
-	isAddMode ? channel.addOperator(client.getFd()) : channel.removeOperator(client.getFd());
-}
-
-void	removeOperator(Channel &channel, Client client)
-{
-	channel.removeOperator(client.getFd());
-}
-
-void	solveLimitMode(Channel &channel, char mode, unsigned int limit, bool isAddMode)
+bool solveOperatorMode(Channel &channel, Client client, bool isAddMode)
 {
 	if (isAddMode)
 	{
-		channel.setUserLimit(limit);
-		channel.addMode(mode);
+		if (!channel.isOperator(client.getFd()))
+		{
+			channel.addOperator(client.getFd());
+			return true;
+		}
 	}
 	else
 	{
-		channel.setUserLimit(0);
-		channel.removeMode(mode);
+		if (channel.isOperator(client.getFd()))
+		{
+			channel.removeOperator(client.getFd());
+			return true;
+		}
 	}
+	return false;
 }
 
-std::map<int, Client>::iterator	findClientByNick(std::map<int, Client> &clients, std::string &nick)
+bool solveLimitMode(Channel &channel, char mode, unsigned int limit, bool isAddMode)
+{
+	if (isAddMode)
+	{
+		if (channel.getUserLimit() != limit)
+		{
+			channel.setUserLimit(limit);
+			channel.addMode(mode);
+			return true;
+		}
+		return false;
+	}
+	channel.setUserLimit(0);
+	return (channel.removeMode(mode));
+}
+
+std::map<int, Client>::iterator findClientByNick(std::map<int, Client> &clients, std::string &nick)
 {
 	std::map<int, Client>::iterator it;
 
@@ -80,16 +94,16 @@ std::map<int, Client>::iterator	findClientByNick(std::map<int, Client> &clients,
 	return it;
 }
 
-std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, std::map<int, Client> &clients, bool isMember, bool isOperator)
+std::string manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, std::map<int, Client> &clients, bool isMember, bool isOperator, std::string &modeChange)
 {
-	bool								addMode;
-	unsigned int						limit;
-	std::string							validModes;
-	std::stringstream					iss;
-	std::map<int, Client>::iterator		clientIt;
-	std::vector<std::string>::iterator	paramIt;
+	bool addMode;
+	unsigned int limit;
+	std::string validModes;
+	std::stringstream iss;
+	std::map<int, Client>::iterator clientIt;
+	std::vector<std::string>::iterator paramIt;
+	std::string paramChange;
 
-	addMode = false;
 	limit = 0;
 	paramIt = params.begin();
 	validModes = "itkol";
@@ -98,19 +112,28 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 	if (!isMember)
 		return ERR_NOTONCHANNEL;
 
+	bool changeFlag;
+
 	if (isOperator)
 	{
 		if (modes.at(0) != '+' && modes.at(0) != '-')
 			return ERR_UNKNOWNMODE + " " + modes.at(0);
+		addMode = modes.at(0) == '+' ? false : true;
 		for (std::string::iterator it = modes.begin(); it != modes.end(); ++it)
 		{
 			if (*it == '+')
 			{
+				if (!addMode)
+					changeFlag = true;
+				// modeChange += '+';
 				addMode = true;
 				continue;
 			}
 			if (*it == '-')
 			{
+				if (addMode)
+					changeFlag = true;
+				// modeChange += '-';
 				addMode = false;
 				continue;
 			}
@@ -118,45 +141,90 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 			{
 				switch (*it)
 				{
-					case 'i':
-						solveInviteMode(channel, *it, addMode);
-						break;
-					case 't':
-						solveTopicMode(channel, *it, addMode);
-						break;
-					case 'k':
-						if (params.size() == 0 || paramIt == params.end())
-							return ERR_NEEDMOREPARAMS;
-						solveKeyMode(channel, *it, *paramIt, addMode);
-						++paramIt;
-						break;
-					case 'o':
-						if (params.size() == 0 || paramIt == params.end())
-							return ERR_NEEDMOREPARAMS;
-						clientIt = findClientByNick(clients, *paramIt);
-						if (clientIt == clients.end())
-							return ERR_NOSUCHNICK;
-						if (!channel.isMember(clientIt->second.getFd()))
-							return ERR_USERNOTINCHANNEL;
-						solveOperatorMode(channel, clientIt->second, addMode);
-						++paramIt;
-						break;
-					case 'l':
-						if (addMode && (params.size() == 0 || paramIt == params.end()))
-							return ERR_NEEDMOREPARAMS;
-						else if (addMode)
+				case 'i':
+					if (solveInviteMode(channel, *it, addMode))
+					{
+						if (changeFlag)
 						{
-							iss.clear();
-							iss.str(*paramIt);
-							iss >> limit;
-							if (!iss.eof() || paramIt->at(0) == '-')
-								return ERR_UNKNOWNERROR;
+							modeChange += addMode ? '+' : '-';
+							changeFlag = false;
 						}
-						solveLimitMode(channel, *it, limit, addMode);
+						modeChange += *it;
+					}
+					break;
+				case 't':
+					if (solveTopicMode(channel, *it, addMode))
+					{
+						if (changeFlag)
+						{
+							modeChange += addMode ? '+' : '-';
+							changeFlag = false;
+						}
+						modeChange += *it;
+					}
+					break;
+				case 'k':
+					if (params.size() == 0 || paramIt == params.end())
+						return ERR_NEEDMOREPARAMS;
+					if (solveKeyMode(channel, *it, *paramIt, addMode))
+					{
+						if (changeFlag)
+						{
+							modeChange += addMode ? '+' : '-';
+							changeFlag = false;
+						}
+						modeChange += *it;
+						paramChange += ' ' + *paramIt;
+					}
+					++paramIt;
+					break;
+				case 'o':
+					if (params.size() == 0 || paramIt == params.end())
+						return ERR_NEEDMOREPARAMS;
+					clientIt = findClientByNick(clients, *paramIt);
+					if (clientIt == clients.end())
+						return ERR_NOSUCHNICK;
+					if (!channel.isMember(clientIt->second.getFd()))
+						return ERR_USERNOTINCHANNEL;
+					if (solveOperatorMode(channel, clientIt->second, addMode))
+					{
+						if (changeFlag)
+						{
+							modeChange += addMode ? '+' : '-';
+							changeFlag = false;
+						}
+						modeChange += *it;
+						paramChange += ' ' + *paramIt;
+					}
+					++paramIt;
+					break;
+				case 'l':
+					if (addMode && (params.size() == 0 || paramIt == params.end()))
+						return ERR_NEEDMOREPARAMS;
+					else if (addMode)
+					{
+						iss.clear();
+						iss.str(*paramIt);
+						iss >> limit;
+						if (!iss.eof() || paramIt->at(0) == '-' || limit == 0)
+							return ERR_UNKNOWNERROR;
+					}
+					if (solveLimitMode(channel, *it, limit, addMode))
+					{
+						if (changeFlag)
+						{
+							modeChange += addMode ? '+' : '-';
+							changeFlag = false;
+						}
+						modeChange += *it;
+						if (addMode)
+							paramChange += ' ' + *paramIt;
+					}
+					if (addMode)
 						++paramIt;
-						break;
-					default:
-						return ERR_UNKNOWNMODE + " " + *it;
+					break;
+				default:
+					return ERR_UNKNOWNMODE + " " + *it;
 				}
 			}
 			else
@@ -165,5 +233,6 @@ std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<s
 	}
 	else
 		return ERR_CHANOPRIVSNEEDED;
+	modeChange += paramChange;
 	return RPL_SUCCESS;
 }

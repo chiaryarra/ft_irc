@@ -15,8 +15,8 @@ class Channel
 	std::string _key;
 	std::set<int> _inviteList;
 	unsigned int _userLimit;
-	bool	_inviteOnly;
-	bool	_topicProtected;
+	bool _inviteOnly;
+	bool _topicProtected;
 
   public:
 	Channel();
@@ -33,7 +33,7 @@ class Channel
 	const bool &isInviteOnly() const;
 	const bool &isTopicProtected() const;
 	const std::string getUserLimitStr() const;
-	
+
 	void setTopic(std::string topic);
 	void setModes(std::string &modes);
 	void setKey(std::string key);
@@ -44,14 +44,14 @@ class Channel
 	void addClient(int clientFd);
 	void addOperator(int clientFd);
 	void addInvite(int clientFd);
-	void addMode(char mode);
+	bool addMode(char mode);
 
 	bool isMember(int clientFd) const;
 	bool isOperator(int clientFd) const;
 	bool isInvited(int clientFd) const;
 	bool hasMode(char mode) const;
 
-	void removeMode(char mode);
+	bool removeMode(char mode);
 	void removeInvite(int clientFd);
 	void removeClient(int clientFd);
 	void removeOperator(int clientFd);

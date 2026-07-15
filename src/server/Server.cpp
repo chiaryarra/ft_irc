@@ -393,6 +393,7 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 	std::string modes;
 	std::vector<std::string> params;
 	std::map<std::string, Channel>::iterator chanIt;
+	std::string modeChange;
 
 	(void)rawMsg;
 	if (tokens.size() < 2)
@@ -411,7 +412,7 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 	if (tokens.size() >= 4)
 		params = std::vector<std::string>(tokens.begin() + 3, tokens.end());
 
-	res = manageChannelMode(chanIt->second, modes, params, _clients, chanIt->second.isMember(client.getFd()), chanIt->second.isOperator(client.getFd()));
+	res = manageChannelMode(chanIt->second, modes, params, _clients, chanIt->second.isMember(client.getFd()), chanIt->second.isOperator(client.getFd()), modeChange);
 
 	for (std::set<int>::iterator it = chanIt->second.getOperators().begin(); it != chanIt->second.getOperators().end(); ++it)
 		std::cout << "operator -> " << *it << std::endl;
@@ -431,7 +432,7 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 		sendError(client, "MODE", res);
 		return;
 	}
-	broadcastToChannel(chanIt->second.getName(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " MODE " + chanIt->second.getName() + " " + showChannelModes(chanIt->second), client.getFd());
+	broadcastToChannel(chanIt->second.getName(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " MODE " + chanIt->second.getName() + " " + modeChange, client.getFd());
 }
 
 void Server::initCommandMap()

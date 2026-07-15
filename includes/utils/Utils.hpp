@@ -40,7 +40,7 @@ const std::string RPL_ENDOFNAMES = "366";
 const std::string RPL_CHANNELMODEIS = "324";
 
 /* Channel error replies */
-const std::string ERR_UNKNOWNERROR = "400"; 
+const std::string ERR_UNKNOWNERROR = "400";
 const std::string ERR_NOSUCHNICK = "401";
 const std::string ERR_NOSUCHCHANNEL = "403";
 const std::string ERR_CANNOTSENDTOCHAN = "404";
@@ -62,6 +62,6 @@ std::string setClientNick(std::string nickname, Client &client, std::map<int, Cl
 std::string setClientUsername(std::string message, std::vector<std::string> split_msg, Client &client);
 std::string joinChannel(Client &client, std::string channelName, bool isNewChannel);
 std::string checkChannelMode(Channel &channel, int clientFd, bool isKeyPass);
-std::string	manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, std::map<int, Client> &clients, bool isMember, bool isOperator);
+std::string manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, std::map<int, Client> &clients, bool isMember, bool isOperator, std::string &modeChange);
 
 #endif
