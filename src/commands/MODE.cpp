@@ -94,6 +94,16 @@ std::map<int, Client>::iterator findClientByNick(std::map<int, Client> &clients,
 	return it;
 }
 
+void appendModeChange(std::string &modeChange, char mode, bool addMode, bool &changeFlag)
+{
+	if (changeFlag)
+	{
+		modeChange += addMode ? '+' : '-';
+		changeFlag = false;
+	}
+	modeChange += mode;
+}
+
 std::string manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, std::map<int, Client> &clients, bool isMember, bool isOperator, std::string &modeChange)
 {
 	bool addMode;
@@ -125,7 +135,6 @@ std::string manageChannelMode(Channel &channel, std::string modes, std::vector<s
 			{
 				if (!addMode)
 					changeFlag = true;
-				// modeChange += '+';
 				addMode = true;
 				continue;
 			}
@@ -133,7 +142,6 @@ std::string manageChannelMode(Channel &channel, std::string modes, std::vector<s
 			{
 				if (addMode)
 					changeFlag = true;
-				// modeChange += '-';
 				addMode = false;
 				continue;
 			}
@@ -143,37 +151,18 @@ std::string manageChannelMode(Channel &channel, std::string modes, std::vector<s
 				{
 				case 'i':
 					if (solveInviteMode(channel, *it, addMode))
-					{
-						if (changeFlag)
-						{
-							modeChange += addMode ? '+' : '-';
-							changeFlag = false;
-						}
-						modeChange += *it;
-					}
+						appendModeChange(modeChange, *it, addMode, changeFlag);
 					break;
 				case 't':
 					if (solveTopicMode(channel, *it, addMode))
-					{
-						if (changeFlag)
-						{
-							modeChange += addMode ? '+' : '-';
-							changeFlag = false;
-						}
-						modeChange += *it;
-					}
+						appendModeChange(modeChange, *it, addMode, changeFlag);
 					break;
 				case 'k':
 					if (params.size() == 0 || paramIt == params.end())
 						return ERR_NEEDMOREPARAMS;
 					if (solveKeyMode(channel, *it, *paramIt, addMode))
 					{
-						if (changeFlag)
-						{
-							modeChange += addMode ? '+' : '-';
-							changeFlag = false;
-						}
-						modeChange += *it;
+						appendModeChange(modeChange, *it, addMode, changeFlag);
 						paramChange += ' ' + *paramIt;
 					}
 					++paramIt;
@@ -188,12 +177,7 @@ std::string manageChannelMode(Channel &channel, std::string modes, std::vector<s
 						return ERR_USERNOTINCHANNEL;
 					if (solveOperatorMode(channel, clientIt->second, addMode))
 					{
-						if (changeFlag)
-						{
-							modeChange += addMode ? '+' : '-';
-							changeFlag = false;
-						}
-						modeChange += *it;
+						appendModeChange(modeChange, *it, addMode, changeFlag);
 						paramChange += ' ' + *paramIt;
 					}
 					++paramIt;
@@ -211,12 +195,7 @@ std::string manageChannelMode(Channel &channel, std::string modes, std::vector<s
 					}
 					if (solveLimitMode(channel, *it, limit, addMode))
 					{
-						if (changeFlag)
-						{
-							modeChange += addMode ? '+' : '-';
-							changeFlag = false;
-						}
-						modeChange += *it;
+						appendModeChange(modeChange, *it, addMode, changeFlag);
 						if (addMode)
 							paramChange += ' ' + *paramIt;
 					}
