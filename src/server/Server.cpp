@@ -212,11 +212,11 @@ void Server::broadcastToChannel(const std::string &channelName, const std::strin
 	}
 }
 
-void Server::sendError(Client &client, const std::string &command, const std::string &errorCode)
+void Server::sendError(Client &client, const std::string &command, const std::string &errorCode, const std::string &extra = "")
 {
 	std::map<std::string, std::string>::iterator it = _errorDescriptions.find(errorCode);
 	if (it != _errorDescriptions.end())
-		sendMessage(client.getFd(), (errorCode == "900" || errorCode == "901" || errorCode == "902" || errorCode == "903" ? ERR_NEEDMOREPARAMS : errorCode) + " " + command + " " + it->second);
+		sendMessage(client.getFd(), ":" + _serverName + " " + (errorCode == "900" || errorCode == "901" || errorCode == "902" || errorCode == "903" ? ERR_NEEDMOREPARAMS : errorCode) + " " + command + " " + extra + (extra.empty() ? "" : " ") + it->second);
 }
 
 void Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
@@ -273,7 +273,6 @@ std::string Server::showClientsInChannel(Channel &channel)
 
 	for (std::set<int>::iterator it = channel.getClients().begin(); it != channel.getClients().end(); ++it)
 	{
-
 		std::set<int>::iterator next_it = it;
 		++next_it;
 		std::map<int, Client>::iterator client_it = _clients.find(*it);
@@ -288,6 +287,17 @@ std::string Server::showClientsInChannel(Channel &channel)
 			names += " ";
 	}
 	return names;
+}
+
+std::string Server::showChannelModes(Channel &channel)
+{
+	std::string message;
+
+	message += channel.getModes().empty() ? "" : "+" + channel.getModes();
+	message += channel.getKey().empty() ? "" : " " + channel.getKey();
+	message += channel.getUserLimit() == 0 ? "" : " " + channel.getUserLimitStr();
+
+	return message;
 }
 
 void Server::sendJoinMessage(Client &client, Channel &channel)
@@ -377,6 +387,63 @@ void Server::handlePing(Client &client, const std::string &rawMsg, const std::ve
 	}
 }
 
+void Server::handleMode(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	std::string res;
+	std::string modes;
+	std::vector<std::string> params;
+	std::map<std::string, Channel>::iterator chanIt;
+	std::string modeChange;
+
+	(void)rawMsg;
+	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " MODE " + MSG_NEEDMOREPARAMS);
+		return;
+	}
+	chanIt = _channels.find(tokens[1]);
+	if (chanIt == _channels.end())
+	{
+		sendError(client, "MODE", ERR_NOSUCHCHANNEL);
+		return;
+	}
+	if (tokens.size() >= 3)
+		modes = tokens[2];
+	if (tokens.size() >= 4)
+		params = std::vector<std::string>(tokens.begin() + 3, tokens.end());
+
+	res = manageChannelMode(
+			chanIt->second, 
+			modes, 
+			params, 
+			_clients, 
+			chanIt->second.isMember(client.getFd()), chanIt->second.isOperator(client.getFd()), modeChange);
+
+	if (res.compare(RPL_CHANNELMODEIS) == 0)
+	{
+		sendMessage(
+				client.getFd(),
+				":" + _serverName + " " + RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName()
+				+ " " + showChannelModes(chanIt->second));
+		return;
+	}
+	else if (res.find(ERR_UNKNOWNMODE) == 0 && res.size() > ERR_UNKNOWNMODE.size())
+	{
+		sendError(client, "MODE", ERR_UNKNOWNMODE, res.substr(ERR_UNKNOWNMODE.size() + 1));
+		return;
+	}
+	else if (res.compare(RPL_SUCCESS) != 0)
+	{
+		sendError(client, "MODE", res);
+		return;
+	}
+	if (!modeChange.empty())
+		broadcastToChannel(
+				chanIt->second.getName(), 
+				":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " MODE " 
+				+ chanIt->second.getName() + " " + modeChange, client.getFd());
+}
+
 void Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
@@ -385,6 +452,7 @@ void Server::initCommandMap()
 	_cmdMap["JOIN"] = &Server::handleJoin;
 	_cmdMap["CAP"] = &Server::handleCap;
 	_cmdMap["PING"] = &Server::handlePing;
+	_cmdMap["MODE"] = &Server::handleMode;
 }
 
 void Server::initErrorDescriptions()
@@ -395,13 +463,20 @@ void Server::initErrorDescriptions()
 	_errorDescriptions[ERR_NICKNAMEINUSE] = ":Nickname is already in use";
 	_errorDescriptions[ERR_NOTREGISTERED] = ":Not registered";
 	_errorDescriptions[ERR_NOSUCHCHANNEL] = ":No such channel";
+	_errorDescriptions[ERR_NOTONCHANNEL] = ":You're not on that channel";
+	_errorDescriptions[ERR_NOSUCHNICK] = ":No such nick/channel";
 	_errorDescriptions[ERR_CHANNELISFULL] = ":Channel is full";
+	_errorDescriptions[ERR_CHANOPRIVSNEEDED] = ":You're not channel operator";
+	_errorDescriptions[ERR_USERNOTINCHANNEL] = ":They aren't on that channel";
 	_errorDescriptions[ERR_INVITEONLYCHAN] = ":Client not invited";
 	_errorDescriptions[ERR_BADCHANNELKEY] = ":Wrong key";
 	_errorDescriptions[ERR_INVALIDUSERNAME] = ":invalid username";
 	_errorDescriptions[ERR_INVALIDMODE] = ":invalid mode (not 0)";
 	_errorDescriptions[ERR_INVALIDUNUSED] = ":invalid unused (not *)";
 	_errorDescriptions[ERR_INVALIDREALNAME] = ":invalid realname";
+	_errorDescriptions[ERR_UNKNOWNMODE] = ":is unknown mode char to me";
+	_errorDescriptions[ERR_NEEDMOREPARAMS] = ":not enough parameters";
+	_errorDescriptions[ERR_UNKNOWNERROR] = ":unknown error";
 }
 
 void Server::handleClientData(int clientFd)
