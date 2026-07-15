@@ -444,6 +444,11 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 				+ chanIt->second.getName() + " " + modeChange, client.getFd());
 }
 
+void Server::handleInvite(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+
+}
+
 void Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
@@ -453,6 +458,7 @@ void Server::initCommandMap()
 	_cmdMap["CAP"] = &Server::handleCap;
 	_cmdMap["PING"] = &Server::handlePing;
 	_cmdMap["MODE"] = &Server::handleMode;
+	_cmdMap["INVITE"] = &Server::handleInvite;
 }
 
 void Server::initErrorDescriptions()
