@@ -74,8 +74,8 @@ bool Channel::addMode(char mode)
 			_modes.push_back(mode);
 			break;
 		case 'k':
-			if (_modes.size() >= 2)
-				_modes.insert(0, 1, mode);
+			if (_modes.size() >= 1 && _modes.at(_modes.size() - 1) == 'l')
+				_modes.insert(_modes.size() - 1, 1, mode);
 			else
 				_modes.push_back(mode);
 			break;
