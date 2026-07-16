@@ -444,6 +444,49 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 				+ chanIt->second.getName() + " " + modeChange, client.getFd());
 }
 
+void Server::handleInvite(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	std::map<std::string, Channel>::iterator	chanIt;
+	std::map<int, Client>::iterator				targetIt;
+	std::string									res;
+
+	(void)rawMsg;
+	if (tokens.size() < 3)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " INVITE " + MSG_NEEDMOREPARAMS);
+		return;
+	}
+	chanIt = _channels.find(tokens[2]);
+	targetIt = findClientByNick(_clients, tokens[1]);
+	if (chanIt == _channels.end())
+	{
+		sendError(client, "INVITE", ERR_NOSUCHCHANNEL);
+		return;
+	}
+	if (targetIt == _clients.end())
+	{
+		sendError(client, "INVITE", ERR_NOSUCHNICK);
+		return;
+	}
+	res = inviteUser(client, targetIt->second, chanIt->second);
+	if (res.compare(RPL_INVITING) != 0)
+	{
+		sendError(client, "INVITE", res);
+		return;
+	}
+	sendMessage(
+		client.getFd(), 
+			":" + _serverName
+			+ " " + res
+			+ " " + client.getNickname() 
+			+ " " + targetIt->second.getNickname()
+			+ " " + chanIt->second.getName());
+	sendMessage(
+			targetIt->second.getFd(),
+			":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost()
+			+ " " + "INVITE " + targetIt->second.getNickname() + " :" + chanIt->second.getName());
+}
+
 void Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
@@ -453,6 +496,7 @@ void Server::initCommandMap()
 	_cmdMap["CAP"] = &Server::handleCap;
 	_cmdMap["PING"] = &Server::handlePing;
 	_cmdMap["MODE"] = &Server::handleMode;
+	_cmdMap["INVITE"] = &Server::handleInvite;
 }
 
 void Server::initErrorDescriptions()
