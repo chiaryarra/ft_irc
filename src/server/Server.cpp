@@ -476,7 +476,8 @@ void Server::handleInvite(Client &client, const std::string &rawMsg, const std::
 	}
 	sendMessage(
 		client.getFd(), 
-			":" + _serverName 
+			":" + _serverName
+			+ " " + res
 			+ " " + client.getNickname() 
 			+ " " + targetIt->second.getNickname()
 			+ " " + chanIt->second.getName());
