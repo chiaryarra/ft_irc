@@ -468,12 +468,22 @@ void Server::handleInvite(Client &client, const std::string &rawMsg, const std::
 		sendError(client, "INVITE", ERR_NOSUCHNICK);
 		return;
 	}
-	res = inviteUser(client, chanIt->second);
-	if (res.compare(RPL_SUCCESS) != 0)
+	res = inviteUser(client, targetIt->second, chanIt->second);
+	if (res.compare(RPL_INVITING) != 0)
 	{
 		sendError(client, "INVITE", res);
 		return;
 	}
+	sendMessage(
+		client.getFd(), 
+			":" + _serverName 
+			+ " " + client.getNickname() 
+			+ " " + targetIt->second.getNickname()
+			+ " " + chanIt->second.getName());
+	sendMessage(
+			targetIt->second.getFd(),
+			":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost()
+			+ " " + "INVITE " + targetIt->second.getNickname() + " :" + chanIt->second.getName());
 }
 
 void Server::initCommandMap()

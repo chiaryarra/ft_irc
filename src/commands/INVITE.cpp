@@ -1,9 +1,11 @@
 #include "../../includes/utils/Utils.hpp"
 
-std::string inviteUser(Client &client, Channel &channel)
+std::string inviteUser(Client &sender, Client &target, Channel &channel)
 {
-	if (!channel.isMember(client.getFd()))
+	if (!channel.isMember(sender.getFd()))
 		return ERR_NOTONCHANNEL;
-
-	return RPL_SUCCESS;
+	if (channel.isInviteOnly() && !channel.isOperator(sender.getFd()))
+		return ERR_CHANOPRIVSNEEDED;
+	channel.addInvite(target.getFd());
+	return RPL_INVITING;
 }
