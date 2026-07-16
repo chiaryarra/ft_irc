@@ -446,6 +446,13 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 
 void Server::handleInvite(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
+	(void)rawMsg;
+	if (tokens.size() < 3)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " INVITE " + MSG_NEEDMOREPARAMS);
+		return;
+	}
+
 
 }
 
