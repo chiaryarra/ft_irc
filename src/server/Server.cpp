@@ -167,6 +167,20 @@ void Server::processClientBuffer(Client &client)
 
 void Server::removeClient(int clientFd)
 {
+	std::map<std::string, Channel>::iterator it = _channels.begin();
+	while (it != _channels.end())
+	{
+    	if (it->second.isMember(clientFd))
+    	{
+    	    it->second.removeClient(clientFd);
+    	    if (it->second.getClients().empty())
+        		_channels.erase(it++);
+			else
+				++it;
+		}
+		else
+			++it;
+	}
 	close(clientFd);
 	_clients.erase(clientFd);
 	for (size_t i = 0; i < _pollFds.size(); i++)

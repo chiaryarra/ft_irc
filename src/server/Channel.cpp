@@ -22,6 +22,8 @@ Channel &Channel::operator=(const Channel &other)
 	return *this;
 }
 
+Channel::~Channel() { }
+
 void Channel::addClient(int clientFd) { _clients.insert(clientFd); }
 
 void Channel::removeClient(int clientFd)

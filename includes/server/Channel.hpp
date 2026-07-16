@@ -22,6 +22,7 @@ class Channel
 	Channel();
 	Channel(const std::string &name);
 	Channel &operator=(const Channel &other);
+	~Channel();
 
 	const std::string &getName() const;
 	const std::set<int> &getClients() const;
