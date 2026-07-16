@@ -1,6 +1,6 @@
 #include "../../includes/utils/Utils.hpp"
 
-std::map<int, Client>::iterator findClientByNick(std::map<int, Client> &clients, std::string &nick)
+std::map<int, Client>::iterator findClientByNick(std::map<int, Client> &clients, const std::string &nick)
 {
 	std::map<int, Client>::iterator it;
 
