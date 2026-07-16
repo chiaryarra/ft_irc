@@ -448,6 +448,7 @@ void Server::handleInvite(Client &client, const std::string &rawMsg, const std::
 {
 	std::map<std::string, Channel>::iterator	chanIt;
 	std::map<int, Client>::iterator				targetIt;
+	std::string									res;
 
 	(void)rawMsg;
 	if (tokens.size() < 3)
@@ -467,10 +468,12 @@ void Server::handleInvite(Client &client, const std::string &rawMsg, const std::
 		sendError(client, "INVITE", ERR_NOSUCHNICK);
 		return;
 	}
-
-
-	
-
+	res = inviteUser(client, chanIt->second);
+	if (res.compare(RPL_SUCCESS) != 0)
+	{
+		sendError(client, "INVITE", res);
+		return;
+	}
 }
 
 void Server::initCommandMap()
