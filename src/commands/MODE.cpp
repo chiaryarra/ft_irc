@@ -82,18 +82,6 @@ bool solveLimitMode(Channel &channel, char mode, unsigned int limit, bool isAddM
 	return (channel.removeMode(mode));
 }
 
-std::map<int, Client>::iterator findClientByNick(std::map<int, Client> &clients, std::string &nick)
-{
-	std::map<int, Client>::iterator it;
-
-	for (it = clients.begin(); it != clients.end(); ++it)
-	{
-		if (it->second.getNickname().compare(nick) == 0)
-			break;
-	}
-	return it;
-}
-
 void appendModeChange(std::string &modeChange, char mode, bool addMode, bool &changeFlag)
 {
 	if (changeFlag)
@@ -106,13 +94,13 @@ void appendModeChange(std::string &modeChange, char mode, bool addMode, bool &ch
 
 std::string manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, std::map<int, Client> &clients, bool isMember, bool isOperator, std::string &modeChange)
 {
-	bool								addMode;
-	bool								changeFlag;
-	unsigned int						limit;
-	std::string							paramChange;
-	std::stringstream					iss;
-	std::map<int, Client>::iterator		clientIt;
-	std::vector<std::string>::iterator	paramIt;
+	bool addMode;
+	bool changeFlag;
+	unsigned int limit;
+	std::string paramChange;
+	std::stringstream iss;
+	std::map<int, Client>::iterator clientIt;
+	std::vector<std::string>::iterator paramIt;
 
 	limit = 0;
 	paramIt = params.begin();

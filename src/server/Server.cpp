@@ -446,13 +446,30 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 
 void Server::handleInvite(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
+	std::map<std::string, Channel>::iterator	chanIt;
+	std::map<int, Client>::iterator				targetIt;
+
 	(void)rawMsg;
 	if (tokens.size() < 3)
 	{
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " INVITE " + MSG_NEEDMOREPARAMS);
 		return;
 	}
+	chanIt = _channels.find(tokens[2]);
+	targetIt = findClientByNick(_clients, tokens[1]);
+	if (chanIt == _channels.end())
+	{
+		sendError(client, "INVITE", ERR_NOSUCHCHANNEL);
+		return;
+	}
+	if (targetIt == _clients.end())
+	{
+		sendError(client, "INVITE", ERR_NOSUCHNICK);
+		return;
+	}
 
+
+	
 
 }
 
