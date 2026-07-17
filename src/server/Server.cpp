@@ -127,14 +127,25 @@ void Server::handleNewConnection()
 	}
 }
 
-std::vector<std::string> split(const std::string message)
+std::vector<std::string> split(std::string message)
 {
-	std::vector<std::string> res;
-	std::istringstream iss(message);
-	std::string word;
+	std::vector<std::string>	res;
+	std::string::size_type		trailing_pos;
+	std::istringstream			iss;
+	std::string					word;
+	std::string					trailing;
 
+	trailing_pos = message.find_first_of(':');
+	if (trailing_pos != std::string::npos && trailing_pos > 1 && message.at(trailing_pos - 1) == ' ')
+	{
+		trailing = message.substr(trailing_pos + 1, message.size() - trailing_pos);
+		message.resize(trailing_pos);
+	}
+	iss.str(message);
 	while (iss >> word)
 		res.push_back(word);
+	if (!trailing.empty())
+		res.push_back(trailing);
 	return (res);
 }
 
@@ -146,7 +157,7 @@ void Server::processClientBuffer(Client &client)
 	while ((pos = buf.find("\r\n")) != std::string::npos)
 	{
 		std::string message = buf.substr(0, pos);
-		buf.erase(0, pos + 1);
+		buf.erase(0, pos + 2);
 		std::vector<std::string> split_msg = split(message);
 		std::cout << "Received command: " << message << std::endl;
 		if (!split_msg.empty())
@@ -412,19 +423,11 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 	if (tokens.size() >= 4)
 		params = std::vector<std::string>(tokens.begin() + 3, tokens.end());
 
-	res = manageChannelMode(
-			chanIt->second, 
-			modes, 
-			params, 
-			_clients, 
-			chanIt->second.isMember(client.getFd()), chanIt->second.isOperator(client.getFd()), modeChange);
+	res = manageChannelMode(chanIt->second, modes, params, _clients, chanIt->second.isMember(client.getFd()), chanIt->second.isOperator(client.getFd()), modeChange);
 
 	if (res.compare(RPL_CHANNELMODEIS) == 0)
 	{
-		sendMessage(
-				client.getFd(),
-				":" + _serverName + " " + RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName()
-				+ " " + showChannelModes(chanIt->second));
+		sendMessage(client.getFd(), ":" + _serverName + " " + RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName() + " " + showChannelModes(chanIt->second));
 		return;
 	}
 	else if (res.find(ERR_UNKNOWNMODE) == 0 && res.size() > ERR_UNKNOWNMODE.size())
@@ -438,17 +441,14 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 		return;
 	}
 	if (!modeChange.empty())
-		broadcastToChannel(
-				chanIt->second.getName(), 
-				":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " MODE " 
-				+ chanIt->second.getName() + " " + modeChange, client.getFd());
+		broadcastToChannel(chanIt->second.getName(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " MODE " + chanIt->second.getName() + " " + modeChange, client.getFd());
 }
 
 void Server::handleInvite(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
-	std::map<std::string, Channel>::iterator	chanIt;
-	std::map<int, Client>::iterator				targetIt;
-	std::string									res;
+	std::map<std::string, Channel>::iterator chanIt;
+	std::map<int, Client>::iterator targetIt;
+	std::string res;
 
 	(void)rawMsg;
 	if (tokens.size() < 3)
@@ -474,17 +474,8 @@ void Server::handleInvite(Client &client, const std::string &rawMsg, const std::
 		sendError(client, "INVITE", res);
 		return;
 	}
-	sendMessage(
-		client.getFd(), 
-			":" + _serverName
-			+ " " + res
-			+ " " + client.getNickname() 
-			+ " " + targetIt->second.getNickname()
-			+ " " + chanIt->second.getName());
-	sendMessage(
-			targetIt->second.getFd(),
-			":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost()
-			+ " " + "INVITE " + targetIt->second.getNickname() + " :" + chanIt->second.getName());
+	sendMessage(client.getFd(), ":" + _serverName + " " + res + " " + client.getNickname() + " " + targetIt->second.getNickname() + " " + chanIt->second.getName());
+	sendMessage(targetIt->second.getFd(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " " + "INVITE " + targetIt->second.getNickname() + " :" + chanIt->second.getName());
 }
 
 void Server::initCommandMap()
