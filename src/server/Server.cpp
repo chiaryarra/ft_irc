@@ -267,13 +267,14 @@ void Server::handleNick(Client &client, const std::string &rawMsg, const std::ve
 void Server::handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	std::string res;
-
+	
+	(void)rawMsg;
 	if (tokens.size() < 5)
 	{
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " USER " + MSG_NEEDMOREPARAMS);
 		return;
 	}
-	res = setClientUsername(rawMsg, tokens, client);
+	res = setClientUsername(tokens, client);
 	if (!res.empty() && res.compare(RPL_SUCCESS) != 0)
 		sendError(client, "USER", res);
 }
@@ -375,27 +376,22 @@ void Server::handleCap(Client &client, const std::string &rawMsg, const std::vec
 
 void Server::handlePing(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
+	(void)rawMsg;
 	if (tokens.size() < 2)
 	{
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PING " + MSG_NEEDMOREPARAMS);
 		return;
 	}
-	size_t pos = rawMsg.find_first_of(":");
-	if (pos != std::string::npos)
-		sendMessage(client.getFd(), "PONG " + rawMsg.substr(pos));
-	else
+	std::string msg;
+	std::vector<std::string>::const_iterator last = tokens.end();
+	++last;
+	for (std::vector<std::string>::const_iterator it = tokens.begin() + 1; it != tokens.end(); ++it)
 	{
-		std::string msg;
-		std::vector<std::string>::const_iterator last = tokens.end();
-		last++;
-		for (std::vector<std::string>::const_iterator it = tokens.begin() + 1; it != tokens.end(); ++it)
-		{
-			msg.append(*it);
-			if (it != last)
-				msg.append(" ");
-		}
-		sendMessage(client.getFd(), "PONG " + msg);
+		msg.append(*it);
+		if (it != last)
+			msg.append(" ");
 	}
+	sendMessage(client.getFd(), "PONG " + msg);
 }
 
 void Server::handleMode(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
