@@ -33,7 +33,7 @@ bool	parseRealName(std::string realname, Client &client)
 	return (true);
 }
 
-std::string	setClientUsername(std::string message, std::vector<std::string> split_msg, Client &client)
+std::string	setClientUsername(std::vector<std::string> split_msg, Client &client)
 {
 	for (std::vector<std::string>::iterator it = split_msg.begin(); it != split_msg.end(); ++it)
 	{
