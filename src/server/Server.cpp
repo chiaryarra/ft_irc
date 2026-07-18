@@ -440,6 +440,11 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 		broadcastToChannel(chanIt->second.getName(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " MODE " + chanIt->second.getName() + " " + modeChange, client.getFd());
 }
 
+void Server::handleTopic(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+
+}
+
 void Server::handleInvite(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	std::map<std::string, Channel>::iterator chanIt;
@@ -484,6 +489,7 @@ void Server::initCommandMap()
 	_cmdMap["PING"] = &Server::handlePing;
 	_cmdMap["MODE"] = &Server::handleMode;
 	_cmdMap["INVITE"] = &Server::handleInvite;
+	_cmdMap["TOPIC"] = &Server::handleInvite;
 }
 
 void Server::initErrorDescriptions()
