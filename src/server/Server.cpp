@@ -440,11 +440,6 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 		broadcastToChannel(chanIt->second.getName(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " MODE " + chanIt->second.getName() + " " + modeChange, client.getFd());
 }
 
-void Server::handleTopic(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
-{
-
-}
-
 void Server::handleInvite(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	std::map<std::string, Channel>::iterator chanIt;
@@ -477,6 +472,42 @@ void Server::handleInvite(Client &client, const std::string &rawMsg, const std::
 	}
 	sendMessage(client.getFd(), ":" + _serverName + " " + res + " " + client.getNickname() + " " + targetIt->second.getNickname() + " " + chanIt->second.getName());
 	sendMessage(targetIt->second.getFd(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " " + "INVITE " + targetIt->second.getNickname() + " :" + chanIt->second.getName());
+}
+
+void Server::handleTopic(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	std::map<std::string, Channel>::iterator	chanIt;
+	std::string									res;
+
+	(void)rawMsg;
+	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), " TOPIC " + MSG_NEEDMOREPARAMS);
+		return;
+	}
+	chanIt = _channels.find(tokens[1]);
+	if (chanIt == _channels.end())
+	{
+		sendError(client, "INVITE", ERR_NOSUCHCHANNEL);
+		return;
+	}
+	res = manageChannelTopic(client, chanIt->second, tokens);
+	if (res.compare(ERR_NOTONCHANNEL) == 0 || res.compare(ERR_CHANOPRIVSNEEDED) )
+		sendError(client, "TOPIC", res);
+	else if (res.compare(RPL_TOPIC) == 0)
+		sendMessage(
+			client.getFd(), 
+			":" + _serverName + " " + res + " " + client.getNickname() + " " + chanIt->second.getName() + " :" + chanIt->second.getTopic());
+	else if (res.compare(RPL_NOTOPIC) == 0)
+		sendMessage(
+			client.getFd(), 
+			":" + _serverName + " " + res + " " + client.getNickname() + " " + chanIt->second.getName() + " :No topic is set");
+	else 
+		broadcastToChannel(
+			chanIt->second.getName(), 
+			":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " TOPIC " 
+			+ chanIt->second.getName() + " :" + chanIt->second.getTopic(),
+			client.getFd());
 }
 
 void Server::initCommandMap()
