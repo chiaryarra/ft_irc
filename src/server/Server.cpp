@@ -512,6 +512,38 @@ void Server::handleTopic(Client &client, const std::string &rawMsg, const std::v
 			client.getFd());
 }
 
+void Server::handlePart(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	std::map<std::string, Channel>::iterator	chanIt;
+	std::string									res;
+
+	(void)rawMsg;
+	if (tokens.size() < 2)
+	{
+		sendError(client, "PART", ERR_NEEDMOREPARAMS);
+		return;
+	}
+	chanIt = _channels.find(tokens[1]);
+	if (chanIt == _channels.end())
+	{
+		sendError(client, "PART", ERR_NOSUCHCHANNEL);
+		return;
+	}
+	res = managePartCommand(client, chanIt->second);
+	if (res.compare(ERR_NOTONCHANNEL) == 0)
+	{
+		sendError(client, "PART", res);
+	}
+	else 
+	{
+		if (chanIt->second.isOperator(client.getFd()))
+			chanIt->second.removeOperator(client.getFd());
+		chanIt->second.removeClient(client.getFd());
+		if (chanIt->second.getClients().empty())
+			_channels.erase(chanIt->first);	
+	}
+}
+
 void Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
@@ -523,6 +555,7 @@ void Server::initCommandMap()
 	_cmdMap["MODE"] = &Server::handleMode;
 	_cmdMap["INVITE"] = &Server::handleInvite;
 	_cmdMap["TOPIC"] = &Server::handleTopic;
+	_cmdMap["PART"] = &Server::handlePart;
 }
 
 void Server::initErrorDescriptions()
