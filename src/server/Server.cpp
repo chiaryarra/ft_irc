@@ -482,17 +482,17 @@ void Server::handleTopic(Client &client, const std::string &rawMsg, const std::v
 	(void)rawMsg;
 	if (tokens.size() < 2)
 	{
-		sendMessage(client.getFd(), " TOPIC " + MSG_NEEDMOREPARAMS);
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " TOPIC " + MSG_NEEDMOREPARAMS);
 		return;
 	}
 	chanIt = _channels.find(tokens[1]);
 	if (chanIt == _channels.end())
 	{
-		sendError(client, "INVITE", ERR_NOSUCHCHANNEL);
+		sendError(client, "TOPIC", ERR_NOSUCHCHANNEL);
 		return;
 	}
 	res = manageChannelTopic(client, chanIt->second, tokens);
-	if (res.compare(ERR_NOTONCHANNEL) == 0 || res.compare(ERR_CHANOPRIVSNEEDED) )
+	if (res.compare(ERR_NOTONCHANNEL) == 0 || res.compare(ERR_CHANOPRIVSNEEDED) == 0)
 		sendError(client, "TOPIC", res);
 	else if (res.compare(RPL_TOPIC) == 0)
 		sendMessage(
@@ -502,7 +502,7 @@ void Server::handleTopic(Client &client, const std::string &rawMsg, const std::v
 		sendMessage(
 			client.getFd(), 
 			":" + _serverName + " " + res + " " + client.getNickname() + " " + chanIt->second.getName() + " :No topic is set");
-	else 
+	else
 		broadcastToChannel(
 			chanIt->second.getName(), 
 			":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " TOPIC " 
@@ -520,7 +520,7 @@ void Server::initCommandMap()
 	_cmdMap["PING"] = &Server::handlePing;
 	_cmdMap["MODE"] = &Server::handleMode;
 	_cmdMap["INVITE"] = &Server::handleInvite;
-	_cmdMap["TOPIC"] = &Server::handleInvite;
+	_cmdMap["TOPIC"] = &Server::handleTopic;
 }
 
 void Server::initErrorDescriptions()
