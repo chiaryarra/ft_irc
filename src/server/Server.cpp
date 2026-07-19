@@ -531,12 +531,16 @@ void Server::handlePart(Client &client, const std::string &rawMsg, const std::ve
 	}
 	res = managePartCommand(client, chanIt->second);
 	if (res.compare(ERR_NOTONCHANNEL) == 0)
-	{
 		sendError(client, "PART", res);
-	}
 	else 
 	{
-		if (chanIt->second.isOperator(client.getFd()))
+    broadcastToChannel(
+        chanIt->second.getName(),
+        ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost()
+        + " PART " + chanIt->second.getName()
+        + ((tokens.size() > 2) ? (" :" + tokens[2]) : ""),
+        0);
+	  if (chanIt->second.isOperator(client.getFd()))
 			chanIt->second.removeOperator(client.getFd());
 		chanIt->second.removeClient(client.getFd());
 		if (chanIt->second.getClients().empty())
