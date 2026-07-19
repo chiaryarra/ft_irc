@@ -474,6 +474,11 @@ void Server::handleInvite(Client &client, const std::string &rawMsg, const std::
 	sendMessage(targetIt->second.getFd(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " " + "INVITE " + targetIt->second.getNickname() + " :" + chanIt->second.getName());
 }
 
+void Server::handleKick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+
+}
+
 void Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
@@ -484,6 +489,7 @@ void Server::initCommandMap()
 	_cmdMap["PING"] = &Server::handlePing;
 	_cmdMap["MODE"] = &Server::handleMode;
 	_cmdMap["INVITE"] = &Server::handleInvite;
+	_cmdMap["KICK"] = &Server::handleKick;
 }
 
 void Server::initErrorDescriptions()
