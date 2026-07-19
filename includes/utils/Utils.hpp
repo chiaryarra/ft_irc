@@ -65,6 +65,7 @@ std::string checkChannelMode(Channel &channel, int clientFd, bool isKeyPass);
 std::string manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, std::map<int, Client> &clients, bool isMember, bool isOperator, std::string &modeChange);
 std::string manageChannelTopic(Client &client, Channel &channel, const std::vector<std::string> &tokens);
 std::string inviteUser(Client &client, Client &target, Channel &channel);
+std::string	managePartCommand(Client &client, Channel &channel);
 std::map<int, Client>::iterator findClientByNick(std::map<int, Client> &clients, const std::string &nick);
 
 #endif
