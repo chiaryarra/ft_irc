@@ -63,6 +63,7 @@ std::string setClientUsername(std::vector<std::string> split_msg, Client &client
 std::string joinChannel(Client &client, std::string channelName, bool isNewChannel);
 std::string checkChannelMode(Channel &channel, int clientFd, bool isKeyPass);
 std::string manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, std::map<int, Client> &clients, bool isMember, bool isOperator, std::string &modeChange);
+std::string manageChannelTopic(Client &client, Channel &channel, const std::vector<std::string> &tokens);
 std::string inviteUser(Client &client, Client &target, Channel &channel);
 std::string	manangeKickCommand(Client &client, Channel &channel, Client &target);
 std::map<int, Client>::iterator findClientByNick(std::map<int, Client> &clients, const std::string &nick);
