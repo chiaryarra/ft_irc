@@ -2,9 +2,9 @@
 #include <algorithm>
 #include <sstream>
 
-Channel::Channel() : _name(), _clients(), _operators(), _userLimit(0) {}
+Channel::Channel() : _name(), _clients(), _operators(), _userLimit(0), _topicProtected(false) {}
 
-Channel::Channel(const std::string &name) : _name(name), _clients(), _operators(), _userLimit(0) {}
+Channel::Channel(const std::string &name) : _name(name), _clients(), _operators(), _userLimit(0), _topicProtected(false) {}
 
 Channel &Channel::operator=(const Channel &other)
 {
@@ -18,6 +18,7 @@ Channel &Channel::operator=(const Channel &other)
 		_key = other._key;
 		_inviteList = other._inviteList;
 		_userLimit = other._userLimit;
+		_topicProtected = other._topicProtected;
 	}
 	return *this;
 }
