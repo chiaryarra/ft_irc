@@ -59,7 +59,7 @@ const std::string MSG_NEEDMOREPARAMS = ":Not enough parameters";
 
 std::string authPass(Client &client, std::string password, std::string server_password);
 std::string setClientNick(std::string nickname, Client &client, std::map<int, Client> &clients);
-std::string setClientUsername(std::string message, std::vector<std::string> split_msg, Client &client);
+std::string setClientUsername(std::vector<std::string> split_msg, Client &client);
 std::string joinChannel(Client &client, std::string channelName, bool isNewChannel);
 std::string checkChannelMode(Channel &channel, int clientFd, bool isKeyPass);
 std::string manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, std::map<int, Client> &clients, bool isMember, bool isOperator, std::string &modeChange);

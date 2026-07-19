@@ -22,29 +22,19 @@ bool	parseUsername(std::string username, Client &client)
 	return (true);
 }
 
-bool	fetchRealName(std::string message, Client &client)
+bool	parseRealName(std::string realname, Client &client)
 {
-	size_t	colonPos;
-	size_t	found;
-	std::string	realName;
-
-	colonPos = message.find_first_of(':') + 1;
-	realName = message.substr(colonPos, message.length());
-	realName.erase(realName.length());
-	found = realName.find_first_of("\r\n\0");
-	if (found != std::string::npos)
+	if (realname.find_first_of("\r\n\0") != std::string::npos)
 	{
 		std::cout << "Invalid real name. Client FD: " << client.getFd() << std::endl;	
 		return (false);
 	}
-	client.setRealname(realName);
+	client.setRealname(realname);
 	return (true);
 }
 
-std::string	setClientUsername(std::string message, std::vector<std::string> split_msg, Client &client)
+std::string	setClientUsername(std::vector<std::string> split_msg, Client &client)
 {
-	std::string realname;
-
 	for (std::vector<std::string>::iterator it = split_msg.begin(); it != split_msg.end(); ++it)
 	{
 		int index = it - split_msg.begin();
@@ -59,6 +49,7 @@ std::string	setClientUsername(std::string message, std::vector<std::string> spli
 				if (it->compare("0") != 0)
 				{
 					std::cout << "Invalid mode " << *it << std::endl;
+					client.setUsername("");					
 					return (ERR_INVALIDMODE);
 				}
 				break ;
@@ -66,12 +57,16 @@ std::string	setClientUsername(std::string message, std::vector<std::string> spli
 				if (it->compare("*") != 0)
 				{
 					std::cout << "This unused " << *it << " is invalid" << std::endl;	
+					client.setUsername("");					
 					return (ERR_INVALIDUNUSED);
 				}
 				break ;
+			case 4:
+				if (!parseRealName(*it, client))
+					return (ERR_INVALIDREALNAME);
+				else
+					client.setRealname(*it);
 		}
 	}
-	if (!fetchRealName(message, client))
-		return (ERR_INVALIDREALNAME);
 	return (RPL_SUCCESS);
 }
