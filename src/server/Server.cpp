@@ -338,6 +338,8 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 	}
 
 	Channel &channel = it->second;
+	if (!isNew && channel.getClients().find(client.getFd()) != channel.getClients().end())
+		return;
 	if (tokens.size() >= 3)
 		isKeyPass = channel.getKey().compare(tokens[2]) == 0;
 
