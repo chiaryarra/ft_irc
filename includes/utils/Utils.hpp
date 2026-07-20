@@ -16,6 +16,8 @@ const std::string RPL_CREATED = "003";
 const std::string RPL_MYINFO = "004";
 
 /* Register error replies */
+const std::string ERR_NORECIPIENT = "411";
+const std::string ERR_NOTEXTTOSEND = "412";
 const std::string ERR_UNKNOWNCOMMAND = "421";
 const std::string ERR_NONICKNAMEGIVEN = "431";
 const std::string ERR_ERRONEUSNICKNAME = "432";
@@ -65,6 +67,8 @@ std::string checkChannelMode(Channel &channel, int clientFd, bool isKeyPass);
 std::string manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, std::map<int, Client> &clients, bool isMember, bool isOperator, std::string &modeChange);
 std::string manageChannelTopic(Client &client, Channel &channel, const std::vector<std::string> &tokens);
 std::string inviteUser(Client &client, Client &target, Channel &channel);
+std::string managePrivmsgToChannel(Client &client, Channel &channel, std::string msg);
+std::string managePrivmsgToClient(Client &client, Channel &channel, Client &target, std::string msg);
 std::map<int, Client>::iterator findClientByNick(std::map<int, Client> &clients, const std::string &nick);
 
 #endif
