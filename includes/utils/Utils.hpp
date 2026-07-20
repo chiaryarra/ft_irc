@@ -16,8 +16,6 @@ const std::string RPL_CREATED = "003";
 const std::string RPL_MYINFO = "004";
 
 /* Register error replies */
-const std::string ERR_NORECIPIENT = "411";
-const std::string ERR_NOTEXTTOSEND = "412";
 const std::string ERR_UNKNOWNCOMMAND = "421";
 const std::string ERR_NONICKNAMEGIVEN = "431";
 const std::string ERR_ERRONEUSNICKNAME = "432";
