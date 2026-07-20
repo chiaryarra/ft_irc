@@ -3,7 +3,7 @@
 std::string managePrivmsgToChannel(Client &client, Channel &channel, std::string msg)
 {
   if (!channel.isMember(client.getFd()))
-    return ERR_NOTONCHANNEL;
+    return ERR_CANNOTSENDTOCHAN;
   if (msg.empty())
     return ERR_NOTEXTTOSEND; 
   

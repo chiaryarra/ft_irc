@@ -599,8 +599,9 @@ void Server::initErrorDescriptions()
 	_errorDescriptions[ERR_UNKNOWNMODE] = ":is unknown mode char to me";
 	_errorDescriptions[ERR_NEEDMOREPARAMS] = ":not enough parameters";
 	_errorDescriptions[ERR_UNKNOWNERROR] = ":unknown error";
-  _errorDescriptions[ERR_NORECIPIENT] = "No recipient";
-  _errorDescriptions[ERR_NOTEXTTOSEND] = "No text to send";
+	_errorDescriptions[ERR_NORECIPIENT] = "No recipient";
+	_errorDescriptions[ERR_NOTEXTTOSEND] = "No text to send";
+	_errorDescriptions[ERR_CANNOTSENDTOCHAN] = "Cannot send to channel";
 }
 
 void Server::handleClientData(int clientFd)
