@@ -10,7 +10,7 @@ std::string managePrivmsgToChannel(Client &client, Channel &channel, std::string
   return RPL_SUCCESS;
 }
 
-std::string managePrivmsgToClient(Client &client, Channel &channel, Client &target, std::string msg)
+std::string managePrivmsgToClient(std::string msg)
 {
   if (msg.empty())
     return ERR_NOTEXTTOSEND;

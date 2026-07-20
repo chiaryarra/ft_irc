@@ -538,10 +538,10 @@ void Server::handlePrivmsg(Client &client, const std::string &rawMsg, const std:
       sendError(client, "PRIVMSG", res);
       return;
     }
-
-    //TODO
-
-
+	broadcastToChannel(chanIt->second.getName(),
+					":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost()
+					+ " PRIVMSG " + chanIt->second.getName() + " :" + tokens[2],
+					client.getFd());
   }
   else 
   {
@@ -551,16 +551,15 @@ void Server::handlePrivmsg(Client &client, const std::string &rawMsg, const std:
       sendError(client, "PRIVMSG", ERR_NOSUCHNICK);
       return;
     }
-    res = managePrivmsgToClient(client, chanIt->second, targetIt->second, tokens[2]);
+    res = managePrivmsgToClient(tokens[2]);
     if (res.compare(RPL_SUCCESS) != 0)
     {
       sendError(client, "PRIVMSG", res);
       return;
     }
-
-    //TODO
-
-
+	sendMessage(targetIt->second.getFd(),
+			 ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost()
+			 + " PRIVMSG " + targetIt->second.getNickname() + " :" + tokens[2]);
   }
 }
 
