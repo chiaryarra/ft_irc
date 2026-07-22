@@ -54,6 +54,8 @@ const std::string ERR_INVITEONLYCHAN = "473";
 const std::string ERR_BANNEDFROMCHAN = "474";
 const std::string ERR_BADCHANNELKEY = "475";
 const std::string ERR_CHANOPRIVSNEEDED = "482";
+const std::string ERR_NOTEXTTOSEND = "411";
+const std::string ERR_NORECIPIENT = "412";
 
 const std::string MSG_NEEDMOREPARAMS = ":Not enough parameters";
 
@@ -65,6 +67,7 @@ std::string checkChannelMode(Channel &channel, int clientFd, bool isKeyPass);
 std::string manageChannelMode(Channel &channel, std::string modes, std::vector<std::string> &params, std::map<int, Client> &clients, bool isMember, bool isOperator, std::string &modeChange);
 std::string manageChannelTopic(Client &client, Channel &channel, const std::vector<std::string> &tokens);
 std::string inviteUser(Client &client, Client &target, Channel &channel);
+std::string	manangeKickCommand(Client &client, Channel &channel, Client &target);
 std::string managePrivmsgToChannel(Client &client, Channel &channel, std::string msg);
 std::string managePrivmsgToClient(std::string msg);
 std::map<int, Client>::iterator findClientByNick(std::map<int, Client> &clients, const std::string &nick);

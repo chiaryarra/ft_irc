@@ -52,6 +52,7 @@ class Server
 	void handleCap(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void handlePing(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void handleMode(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
+	void handleKick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void handleInvite(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void handleTopic(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void handlePrivmsg(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
