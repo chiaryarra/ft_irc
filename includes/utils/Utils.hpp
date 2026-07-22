@@ -54,6 +54,8 @@ const std::string ERR_INVITEONLYCHAN = "473";
 const std::string ERR_BANNEDFROMCHAN = "474";
 const std::string ERR_BADCHANNELKEY = "475";
 const std::string ERR_CHANOPRIVSNEEDED = "482";
+const std::string ERR_NOTEXTTOSEND = "411";
+const std::string ERR_NORECIPIENT = "412";
 
 const std::string MSG_NEEDMOREPARAMS = ":Not enough parameters";
 

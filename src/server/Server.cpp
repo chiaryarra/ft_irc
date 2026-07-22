@@ -127,25 +127,14 @@ void Server::handleNewConnection()
 	}
 }
 
-std::vector<std::string> split(std::string message)
+std::vector<std::string> split(const std::string message)
 {
-	std::vector<std::string>	res;
-	std::string::size_type		trailing_pos;
-	std::istringstream			iss;
-	std::string					word;
-	std::string					trailing;
+	std::vector<std::string> res;
+	std::istringstream iss(message);
+	std::string word;
 
-	trailing_pos = message.find_first_of(':');
-	if (trailing_pos != std::string::npos && trailing_pos > 1 && message.at(trailing_pos - 1) == ' ')
-	{
-		trailing = message.substr(trailing_pos + 1, message.size() - trailing_pos);
-		message.resize(trailing_pos);
-	}
-	iss.str(message);
 	while (iss >> word)
 		res.push_back(word);
-	if (!trailing.empty())
-		res.push_back(trailing);
 	return (res);
 }
 
@@ -157,7 +146,7 @@ void Server::processClientBuffer(Client &client)
 	while ((pos = buf.find("\r\n")) != std::string::npos)
 	{
 		std::string message = buf.substr(0, pos);
-		buf.erase(0, pos + 2);
+		buf.erase(0, pos + 1);
 		std::vector<std::string> split_msg = split(message);
 		std::cout << "Received command: " << message << std::endl;
 		if (!split_msg.empty())
@@ -178,6 +167,20 @@ void Server::processClientBuffer(Client &client)
 
 void Server::removeClient(int clientFd)
 {
+	std::map<std::string, Channel>::iterator it = _channels.begin();
+	while (it != _channels.end())
+	{
+    	if (it->second.isMember(clientFd))
+    	{
+    	    it->second.removeClient(clientFd);
+    	    if (it->second.getClients().empty())
+        		_channels.erase(it++);
+			else
+				++it;
+		}
+		else
+			++it;
+	}
 	close(clientFd);
 	_clients.erase(clientFd);
 	for (size_t i = 0; i < _pollFds.size(); i++)
@@ -267,7 +270,7 @@ void Server::handleNick(Client &client, const std::string &rawMsg, const std::ve
 void Server::handleUser(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	std::string res;
-	
+
 	(void)rawMsg;
 	if (tokens.size() < 5)
 	{
@@ -350,8 +353,6 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 	}
 
 	Channel &channel = it->second;
-	if (!isNew && channel.getClients().find(client.getFd()) != channel.getClients().end())
-		return;
 	if (tokens.size() >= 3)
 		isKeyPass = channel.getKey().compare(tokens[2]) == 0;
 
@@ -378,22 +379,27 @@ void Server::handleCap(Client &client, const std::string &rawMsg, const std::vec
 
 void Server::handlePing(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
-	(void)rawMsg;
 	if (tokens.size() < 2)
 	{
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PING " + MSG_NEEDMOREPARAMS);
 		return;
 	}
-	std::string msg;
-	std::vector<std::string>::const_iterator last = tokens.end();
-	++last;
-	for (std::vector<std::string>::const_iterator it = tokens.begin() + 1; it != tokens.end(); ++it)
+	size_t pos = rawMsg.find_first_of(":");
+	if (pos != std::string::npos)
+		sendMessage(client.getFd(), "PONG " + rawMsg.substr(pos));
+	else
 	{
-		msg.append(*it);
-		if (it != last)
-			msg.append(" ");
+		std::string msg;
+		std::vector<std::string>::const_iterator last = tokens.end();
+		last++;
+		for (std::vector<std::string>::const_iterator it = tokens.begin() + 1; it != tokens.end(); ++it)
+		{
+			msg.append(*it);
+			if (it != last)
+				msg.append(" ");
+		}
+		sendMessage(client.getFd(), "PONG " + msg);
 	}
-	sendMessage(client.getFd(), "PONG " + msg);
 }
 
 void Server::handleMode(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
@@ -421,11 +427,19 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 	if (tokens.size() >= 4)
 		params = std::vector<std::string>(tokens.begin() + 3, tokens.end());
 
-	res = manageChannelMode(chanIt->second, modes, params, _clients, chanIt->second.isMember(client.getFd()), chanIt->second.isOperator(client.getFd()), modeChange);
+	res = manageChannelMode(
+			chanIt->second, 
+			modes, 
+			params, 
+			_clients, 
+			chanIt->second.isMember(client.getFd()), chanIt->second.isOperator(client.getFd()), modeChange);
 
 	if (res.compare(RPL_CHANNELMODEIS) == 0)
 	{
-		sendMessage(client.getFd(), ":" + _serverName + " " + RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName() + " " + showChannelModes(chanIt->second));
+		sendMessage(
+				client.getFd(),
+				":" + _serverName + " " + RPL_CHANNELMODEIS + " " + client.getNickname() + " " + chanIt->second.getName()
+				+ " " + showChannelModes(chanIt->second));
 		return;
 	}
 	else if (res.find(ERR_UNKNOWNMODE) == 0 && res.size() > ERR_UNKNOWNMODE.size())
@@ -439,169 +453,10 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 		return;
 	}
 	if (!modeChange.empty())
-		broadcastToChannel(chanIt->second.getName(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " MODE " + chanIt->second.getName() + " " + modeChange, client.getFd());
-}
-
-void Server::handleInvite(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
-{
-	std::map<std::string, Channel>::iterator chanIt;
-	std::map<int, Client>::iterator targetIt;
-	std::string res;
-
-	(void)rawMsg;
-	if (tokens.size() < 3)
-	{
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " INVITE " + MSG_NEEDMOREPARAMS);
-		return;
-	}
-	chanIt = _channels.find(tokens[2]);
-	targetIt = findClientByNick(_clients, tokens[1]);
-	if (chanIt == _channels.end())
-	{
-		sendError(client, "INVITE", ERR_NOSUCHCHANNEL);
-		return;
-	}
-	if (targetIt == _clients.end())
-	{
-		sendError(client, "INVITE", ERR_NOSUCHNICK);
-		return;
-	}
-	res = inviteUser(client, targetIt->second, chanIt->second);
-	if (res.compare(RPL_INVITING) != 0)
-	{
-		sendError(client, "INVITE", res);
-		return;
-	}
-	sendMessage(client.getFd(), ":" + _serverName + " " + res + " " + client.getNickname() + " " + targetIt->second.getNickname() + " " + chanIt->second.getName());
-	sendMessage(targetIt->second.getFd(), ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " " + "INVITE " + targetIt->second.getNickname() + " :" + chanIt->second.getName());
-}
-
-void Server::handleKick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
-{
-	std::map<std::string, Channel>::iterator	chanIt;
-	std::map<int, Client>::iterator				targetIt;
-	std::string									res;
-
-	(void)rawMsg;
-	if (tokens.size() < 3)
-	{
-		sendError(client, "KICK", ERR_NEEDMOREPARAMS);
-		return;
-	}
-	chanIt = _channels.find(tokens[1]);
-	targetIt = findClientByNick(_clients, tokens[2]);
-	if (chanIt == _channels.end())
-	{
-		sendError(client, "KICK", ERR_NOSUCHCHANNEL);
-		return;
-	}
-	if (targetIt == _clients.end())
-	{
-		sendError(client, "KICK", ERR_NOSUCHNICK);
-		return;
-	}
-	res = manangeKickCommand(client, chanIt->second, targetIt->second);
-	if (res.compare(RPL_SUCCESS) != 0)
-	{
-		sendError(client, "KICK", res);
-		return;
-	}
-	broadcastToChannel(
-		chanIt->second.getName(), 
-		":" + client.getNickname() + "!" +  client.getUsername() + "@" + client.getHost() + " KICK " 
-		+ chanIt->second.getName() + " " + targetIt->second.getNickname()
-		+ ((tokens.size() > 3) ? (" :" + tokens[3]) : ""),
-		0);
-	if (chanIt->second.isOperator(targetIt->second.getFd()))
-		chanIt->second.removeOperator(targetIt->second.getFd());
-	chanIt->second.removeClient(targetIt->second.getFd());
-}
-
-void Server::handleTopic(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
-{
-	std::map<std::string, Channel>::iterator	chanIt;
-	std::string									res;
-
-	(void)rawMsg;
-	if (tokens.size() < 2)
-	{
-		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " TOPIC " + MSG_NEEDMOREPARAMS);
-		return;
-	}
-	chanIt = _channels.find(tokens[1]);
-	if (chanIt == _channels.end())
-	{
-		sendError(client, "TOPIC", ERR_NOSUCHCHANNEL);
-		return;
-	}
-	res = manageChannelTopic(client, chanIt->second, tokens);
-	if (res.compare(ERR_NOTONCHANNEL) == 0 || res.compare(ERR_CHANOPRIVSNEEDED) == 0)
-		sendError(client, "TOPIC", res);
-	else if (res.compare(RPL_TOPIC) == 0)
-		sendMessage(
-			client.getFd(), 
-			":" + _serverName + " " + res + " " + client.getNickname() + " " + chanIt->second.getName() + " :" + chanIt->second.getTopic());
-	else if (res.compare(RPL_NOTOPIC) == 0)
-		sendMessage(
-			client.getFd(), 
-			":" + _serverName + " " + res + " " + client.getNickname() + " " + chanIt->second.getName() + " :No topic is set");
-	else
 		broadcastToChannel(
-			chanIt->second.getName(), 
-			":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " TOPIC " 
-			+ chanIt->second.getName() + " :" + chanIt->second.getTopic(),
-			client.getFd());
-}
-
-void Server::handlePrivmsg(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
-{
-	std::map<std::string, Channel>::iterator chanIt;
-	std::map<int, Client>::iterator targetIt;
-	std::string res;
-
-  (void)rawMsg;
-  if (tokens.size() < 3)
-  {
-    sendError(client, "PRIVMSG", ERR_NEEDMOREPARAMS);
-    return;
-  }
-  if (tokens[1].at(0) == '#')
-  {
-    chanIt = _channels.find(tokens[1]);
-    if (chanIt == _channels.end())
-    {
-      sendError(client, "PRIVMSG", ERR_NOSUCHCHANNEL);
-      return;
-    }
-    res = managePrivmsgToChannel(client, chanIt->second, tokens[2]);
-    if (res.compare(RPL_SUCCESS) != 0)
-    {
-      sendError(client, "PRIVMSG", res);
-      return;
-    }
-	broadcastToChannel(chanIt->second.getName(),
-					":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost()
-					+ " PRIVMSG " + chanIt->second.getName() + " :" + tokens[2],
-					client.getFd());
-  }
-  else 
-  {
-    targetIt = findClientByNick(_clients, tokens[1]);
-    if (targetIt == _clients.end())
-    {
-      sendError(client, "PRIVMSG", ERR_NOSUCHNICK);
-      return;
-    }
-    res = managePrivmsgToClient(tokens[2]);
-    if (res.compare(RPL_SUCCESS) != 0)
-    {
-      sendError(client, "PRIVMSG", res);
-      return;
-    }
-	sendMessage(targetIt->second.getFd(),
-			 ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost()
-			 + " PRIVMSG " + targetIt->second.getNickname() + " :" + tokens[2]);
-  }
+				chanIt->second.getName(), 
+				":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " MODE " 
+				+ chanIt->second.getName() + " " + modeChange, client.getFd());
 }
 
 void Server::initCommandMap()
@@ -613,10 +468,6 @@ void Server::initCommandMap()
 	_cmdMap["CAP"] = &Server::handleCap;
 	_cmdMap["PING"] = &Server::handlePing;
 	_cmdMap["MODE"] = &Server::handleMode;
-	_cmdMap["INVITE"] = &Server::handleInvite;
-	_cmdMap["KICK"] = &Server::handleKick;
-	_cmdMap["TOPIC"] = &Server::handleTopic;
-	_cmdMap["PRIVMSG"] = &Server::handlePrivmsg;
 }
 
 void Server::initErrorDescriptions()
@@ -641,9 +492,6 @@ void Server::initErrorDescriptions()
 	_errorDescriptions[ERR_UNKNOWNMODE] = ":is unknown mode char to me";
 	_errorDescriptions[ERR_NEEDMOREPARAMS] = ":not enough parameters";
 	_errorDescriptions[ERR_UNKNOWNERROR] = ":unknown error";
-	_errorDescriptions[ERR_NORECIPIENT] = "No recipient";
-	_errorDescriptions[ERR_NOTEXTTOSEND] = "No text to send";
-	_errorDescriptions[ERR_CANNOTSENDTOCHAN] = "Cannot send to channel";
 }
 
 void Server::handleClientData(int clientFd)
