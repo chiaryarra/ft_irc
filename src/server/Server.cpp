@@ -512,6 +512,57 @@ void Server::handleTopic(Client &client, const std::string &rawMsg, const std::v
 			client.getFd());
 }
 
+void Server::handlePrivmsg(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	std::map<std::string, Channel>::iterator chanIt;
+	std::map<int, Client>::iterator targetIt;
+	std::string res;
+
+  (void)rawMsg;
+  if (tokens.size() < 3)
+  {
+    sendError(client, "PRIVMSG", ERR_NEEDMOREPARAMS);
+    return;
+  }
+  if (tokens[1].at(0) == '#')
+  {
+    chanIt = _channels.find(tokens[1]);
+    if (chanIt == _channels.end())
+    {
+      sendError(client, "PRIVMSG", ERR_NOSUCHCHANNEL);
+      return;
+    }
+    res = managePrivmsgToChannel(client, chanIt->second, tokens[2]);
+    if (res.compare(RPL_SUCCESS) != 0)
+    {
+      sendError(client, "PRIVMSG", res);
+      return;
+    }
+	broadcastToChannel(chanIt->second.getName(),
+					":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost()
+					+ " PRIVMSG " + chanIt->second.getName() + " :" + tokens[2],
+					client.getFd());
+  }
+  else 
+  {
+    targetIt = findClientByNick(_clients, tokens[1]);
+    if (targetIt == _clients.end())
+    {
+      sendError(client, "PRIVMSG", ERR_NOSUCHNICK);
+      return;
+    }
+    res = managePrivmsgToClient(tokens[2]);
+    if (res.compare(RPL_SUCCESS) != 0)
+    {
+      sendError(client, "PRIVMSG", res);
+      return;
+    }
+	sendMessage(targetIt->second.getFd(),
+			 ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost()
+			 + " PRIVMSG " + targetIt->second.getNickname() + " :" + tokens[2]);
+  }
+}
+
 void Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
@@ -523,6 +574,7 @@ void Server::initCommandMap()
 	_cmdMap["MODE"] = &Server::handleMode;
 	_cmdMap["INVITE"] = &Server::handleInvite;
 	_cmdMap["TOPIC"] = &Server::handleTopic;
+	_cmdMap["PRIVMSG"] = &Server::handlePrivmsg;
 }
 
 void Server::initErrorDescriptions()
@@ -547,6 +599,9 @@ void Server::initErrorDescriptions()
 	_errorDescriptions[ERR_UNKNOWNMODE] = ":is unknown mode char to me";
 	_errorDescriptions[ERR_NEEDMOREPARAMS] = ":not enough parameters";
 	_errorDescriptions[ERR_UNKNOWNERROR] = ":unknown error";
+	_errorDescriptions[ERR_NORECIPIENT] = "No recipient";
+	_errorDescriptions[ERR_NOTEXTTOSEND] = "No text to send";
+	_errorDescriptions[ERR_CANNOTSENDTOCHAN] = "Cannot send to channel";
 }
 
 void Server::handleClientData(int clientFd)
