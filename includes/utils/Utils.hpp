@@ -66,6 +66,8 @@ std::string manageChannelMode(Channel &channel, std::string modes, std::vector<s
 std::string manageChannelTopic(Client &client, Channel &channel, const std::vector<std::string> &tokens);
 std::string inviteUser(Client &client, Client &target, Channel &channel);
 std::string	manangeKickCommand(Client &client, Channel &channel, Client &target);
+std::string managePrivmsgToChannel(Client &client, Channel &channel, std::string msg);
+std::string managePrivmsgToClient(std::string msg);
 std::map<int, Client>::iterator findClientByNick(std::map<int, Client> &clients, const std::string &nick);
 
 #endif
