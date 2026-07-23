@@ -458,6 +458,29 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 				+ chanIt->second.getName() + " " + modeChange, client.getFd());
 }
 
+void Server::handleQuit(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	std::vector<Channel> currentChannels;
+	std::set<int> mutualClients;
+
+	(void)rawMsg;
+
+	for (std::map<std::string, Channel>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+	{
+		if (it->second.isMember(client.getFd()))
+			currentChannels.push_back(it->second);
+	}
+	for (std::vector<Channel>::iterator it = currentChannels.begin(); it != currentChannels.end(); ++it)
+	{
+		mutualClients.insert(it->getClients().begin(), it->getClients().end());
+	}
+	for (std::set<int>::iterator it = mutualClients.begin(); it != mutualClients.end(); ++it)
+	{
+		sendMessage(*it, ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " QUIT " + ":" + (tokens.size() > 1 ? tokens[1] : "Client quit"));
+	}
+	removeClient(client.getFd());
+}
+
 void Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
@@ -467,6 +490,7 @@ void Server::initCommandMap()
 	_cmdMap["CAP"] = &Server::handleCap;
 	_cmdMap["PING"] = &Server::handlePing;
 	_cmdMap["MODE"] = &Server::handleMode;
+	_cmdMap["QUIT"] = &Server::handleQuit;
 }
 
 void Server::initErrorDescriptions()
