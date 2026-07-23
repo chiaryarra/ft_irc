@@ -497,7 +497,7 @@ void Server::handlePart(Client &client, const std::string &rawMsg, const std::ve
 	if (tokens.size() < 2)
 	{
 		sendError(client, "PART", ERR_NEEDMOREPARAMS);
-		return;InputIterator last);
+		return;
 	}
 	chanIt = _channels.find(tokens[1]);
 	if (chanIt == _channels.end())
