@@ -127,14 +127,25 @@ void Server::handleNewConnection()
 	}
 }
 
-std::vector<std::string> split(const std::string message)
+std::vector<std::string> split(std::string message)
 {
-	std::vector<std::string> res;
-	std::istringstream iss(message);
-	std::string word;
+	std::vector<std::string>	res;
+	std::string::size_type		trailing_pos;
+	std::istringstream			iss;
+	std::string					word;
+	std::string					trailing;
 
+	trailing_pos = message.find_first_of(':');
+	if (trailing_pos != std::string::npos && trailing_pos > 1 && message.at(trailing_pos - 1) == ' ')
+	{
+		trailing = message.substr(trailing_pos + 1, message.size() - trailing_pos);
+		message.resize(trailing_pos);
+	}
+	iss.str(message);
 	while (iss >> word)
 		res.push_back(word);
+	if (!trailing.empty())
+		res.push_back(trailing);
 	return (res);
 }
 
@@ -146,7 +157,7 @@ void Server::processClientBuffer(Client &client)
 	while ((pos = buf.find("\r\n")) != std::string::npos)
 	{
 		std::string message = buf.substr(0, pos);
-		buf.erase(0, pos + 1);
+		buf.erase(0, pos + 2);
 		std::vector<std::string> split_msg = split(message);
 		std::cout << "Received command: " << message << std::endl;
 		if (!split_msg.empty())
@@ -379,27 +390,22 @@ void Server::handleCap(Client &client, const std::string &rawMsg, const std::vec
 
 void Server::handlePing(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
+	(void)rawMsg;
 	if (tokens.size() < 2)
 	{
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PING " + MSG_NEEDMOREPARAMS);
 		return;
 	}
-	size_t pos = rawMsg.find_first_of(":");
-	if (pos != std::string::npos)
-		sendMessage(client.getFd(), "PONG " + rawMsg.substr(pos));
-	else
+	std::string msg;
+	std::vector<std::string>::const_iterator last = tokens.end();
+	++last;
+	for (std::vector<std::string>::const_iterator it = tokens.begin() + 1; it != tokens.end(); ++it)
 	{
-		std::string msg;
-		std::vector<std::string>::const_iterator last = tokens.end();
-		last++;
-		for (std::vector<std::string>::const_iterator it = tokens.begin() + 1; it != tokens.end(); ++it)
-		{
-			msg.append(*it);
-			if (it != last)
-				msg.append(" ");
-		}
-		sendMessage(client.getFd(), "PONG " + msg);
+		msg.append(*it);
+		if (it != last)
+			msg.append(" ");
 	}
+	sendMessage(client.getFd(), "PONG " + msg);
 }
 
 void Server::handleMode(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
@@ -502,6 +508,42 @@ void Server::handleInvite(Client &client, const std::string &rawMsg, const std::
 			+ " " + "INVITE " + targetIt->second.getNickname() + " :" + chanIt->second.getName());
 }
 
+void Server::handleTopic(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	std::map<std::string, Channel>::iterator	chanIt;
+	std::string									res;
+
+	(void)rawMsg;
+	if (tokens.size() < 2)
+	{
+		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " TOPIC " + MSG_NEEDMOREPARAMS);
+		return;
+	}
+	chanIt = _channels.find(tokens[1]);
+	if (chanIt == _channels.end())
+	{
+		sendError(client, "TOPIC", ERR_NOSUCHCHANNEL);
+		return;
+	}
+	res = manageChannelTopic(client, chanIt->second, tokens);
+	if (res.compare(ERR_NOTONCHANNEL) == 0 || res.compare(ERR_CHANOPRIVSNEEDED) == 0)
+		sendError(client, "TOPIC", res);
+	else if (res.compare(RPL_TOPIC) == 0)
+		sendMessage(
+			client.getFd(), 
+			":" + _serverName + " " + res + " " + client.getNickname() + " " + chanIt->second.getName() + " :" + chanIt->second.getTopic());
+	else if (res.compare(RPL_NOTOPIC) == 0)
+		sendMessage(
+			client.getFd(), 
+			":" + _serverName + " " + res + " " + client.getNickname() + " " + chanIt->second.getName() + " :No topic is set");
+	else
+		broadcastToChannel(
+			chanIt->second.getName(), 
+			":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " TOPIC " 
+			+ chanIt->second.getName() + " :" + chanIt->second.getTopic(),
+			client.getFd());
+}
+
 void Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
@@ -512,6 +554,7 @@ void Server::initCommandMap()
 	_cmdMap["PING"] = &Server::handlePing;
 	_cmdMap["MODE"] = &Server::handleMode;
 	_cmdMap["INVITE"] = &Server::handleInvite;
+	_cmdMap["TOPIC"] = &Server::handleTopic;
 }
 
 void Server::initErrorDescriptions()
