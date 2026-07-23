@@ -465,6 +465,42 @@ void Server::handleMode(Client &client, const std::string &rawMsg, const std::ve
 				+ chanIt->second.getName() + " " + modeChange, client.getFd());
 }
 
+void Server::handlePart(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	std::map<std::string, Channel>::iterator	chanIt;
+	std::string									res;
+
+	(void)rawMsg;
+	if (tokens.size() < 2)
+	{
+		sendError(client, "PART", ERR_NEEDMOREPARAMS);
+		return;
+	}
+	chanIt = _channels.find(tokens[1]);
+	if (chanIt == _channels.end())
+	{
+		sendError(client, "PART", ERR_NOSUCHCHANNEL);
+		return;
+	}
+	res = managePartCommand(client, chanIt->second);
+	if (res.compare(ERR_NOTONCHANNEL) == 0)
+		sendError(client, "PART", res);
+	else
+	{
+		broadcastToChannel(
+			chanIt->second.getName(),
+			":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost()
+			+ " PART " + chanIt->second.getName()
+			+ ((tokens.size() > 2) ? (" :" + tokens[2]) : ""),
+			0);
+		if (chanIt->second.isOperator(client.getFd()))
+			chanIt->second.removeOperator(client.getFd());
+		chanIt->second.removeClient(client.getFd());
+		if (chanIt->second.getClients().empty())
+			_channels.erase(chanIt->first);
+	}
+}
+
 void Server::handleInvite(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	std::map<std::string, Channel>::iterator	chanIt;
@@ -496,10 +532,10 @@ void Server::handleInvite(Client &client, const std::string &rawMsg, const std::
 		return;
 	}
 	sendMessage(
-		client.getFd(), 
+		client.getFd(),
 			":" + _serverName
 			+ " " + res
-			+ " " + client.getNickname() 
+			+ " " + client.getNickname()
 			+ " " + targetIt->second.getNickname()
 			+ " " + chanIt->second.getName());
 	sendMessage(
@@ -530,16 +566,16 @@ void Server::handleTopic(Client &client, const std::string &rawMsg, const std::v
 		sendError(client, "TOPIC", res);
 	else if (res.compare(RPL_TOPIC) == 0)
 		sendMessage(
-			client.getFd(), 
+			client.getFd(),
 			":" + _serverName + " " + res + " " + client.getNickname() + " " + chanIt->second.getName() + " :" + chanIt->second.getTopic());
 	else if (res.compare(RPL_NOTOPIC) == 0)
 		sendMessage(
-			client.getFd(), 
+			client.getFd(),
 			":" + _serverName + " " + res + " " + client.getNickname() + " " + chanIt->second.getName() + " :No topic is set");
 	else
 		broadcastToChannel(
-			chanIt->second.getName(), 
-			":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " TOPIC " 
+			chanIt->second.getName(),
+			":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " TOPIC "
 			+ chanIt->second.getName() + " :" + chanIt->second.getTopic(),
 			client.getFd());
 }
@@ -555,6 +591,7 @@ void Server::initCommandMap()
 	_cmdMap["MODE"] = &Server::handleMode;
 	_cmdMap["INVITE"] = &Server::handleInvite;
 	_cmdMap["TOPIC"] = &Server::handleTopic;
+	_cmdMap["PART"] = &Server::handlePart;
 }
 
 void Server::initErrorDescriptions()
