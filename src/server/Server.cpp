@@ -603,6 +603,47 @@ void Server::handleTopic(Client &client, const std::string &rawMsg, const std::v
 			client.getFd());
 }
 
+void Server::handleKick(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
+{
+	std::map<std::string, Channel>::iterator	chanIt;
+	std::map<int, Client>::iterator				targetIt;
+	std::string									res;
+
+	(void)rawMsg;
+	if (tokens.size() < 3)
+	{
+		sendError(client, "KICK", ERR_NEEDMOREPARAMS);
+		return;
+	}
+	chanIt = _channels.find(tokens[1]);
+	targetIt = findClientByNick(_clients, tokens[2]);
+	if (chanIt == _channels.end())
+	{
+		sendError(client, "KICK", ERR_NOSUCHCHANNEL);
+		return;
+	}
+	if (targetIt == _clients.end())
+	{
+		sendError(client, "KICK", ERR_NOSUCHNICK);
+		return;
+	}
+	res = manangeKickCommand(client, chanIt->second, targetIt->second);
+	if (res.compare(RPL_SUCCESS) != 0)
+	{
+		sendError(client, "KICK", res);
+		return;
+	}
+	broadcastToChannel(
+		chanIt->second.getName(),
+		":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " KICK "
+		+ chanIt->second.getName() + " " + targetIt->second.getNickname()
+		+ ((tokens.size() > 3) ? (" :" + tokens[3]) : ""),
+		0);
+	if (chanIt->second.isOperator(targetIt->second.getFd()))
+		chanIt->second.removeOperator(targetIt->second.getFd());
+	chanIt->second.removeClient(targetIt->second.getFd());
+}
+
 void Server::initCommandMap()
 {
 	_cmdMap["PASS"] = &Server::handlePass;
@@ -614,6 +655,7 @@ void Server::initCommandMap()
 	_cmdMap["MODE"] = &Server::handleMode;
 	_cmdMap["QUIT"] = &Server::handleQuit;
 	_cmdMap["INVITE"] = &Server::handleInvite;
+	_cmdMap["KICK"] = &Server::handleKick;
 	_cmdMap["TOPIC"] = &Server::handleTopic;
 	_cmdMap["PART"] = &Server::handlePart;
 }
