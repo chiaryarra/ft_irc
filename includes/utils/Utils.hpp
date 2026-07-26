@@ -72,5 +72,6 @@ std::string	manangeKickCommand(Client &client, Channel &channel, Client &target)
 std::string managePrivmsgToChannel(Client &client, Channel &channel, std::string msg);
 std::string managePrivmsgToClient(std::string msg);
 std::map<int, Client>::iterator findClientByNick(std::map<int, Client> &clients, const std::string &nick);
+std::vector<std::string> split(std::string message);
 
 #endif
