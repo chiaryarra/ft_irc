@@ -186,15 +186,16 @@ void Server::handleCap(Client &client, const std::string &rawMsg, const std::vec
 
 void Server::handlePing(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
+	std::string msg;
+	std::vector<std::string>::const_iterator last = tokens.end() - 1;
+
 	(void)rawMsg;
 	if (tokens.size() < 2)
 	{
 		sendMessage(client.getFd(), ERR_NEEDMOREPARAMS + " PING " + MSG_NEEDMOREPARAMS);
 		return;
 	}
-	std::string msg;
-	std::vector<std::string>::const_iterator last = tokens.end();
-	++last;
+	last = tokens.end() - 1;
 	for (std::vector<std::string>::const_iterator it = tokens.begin() + 1; it != tokens.end(); ++it)
 	{
 		msg.append(*it);
