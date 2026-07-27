@@ -26,8 +26,6 @@ Server::~Server()
 		close(_serverSocketFd);
 }
 
-
-
 void Server::processClientBuffer(Client &client)
 {
 	std::string &buf = client.getInputBuffer();
@@ -60,11 +58,11 @@ void Server::removeClient(int clientFd)
 	std::map<std::string, Channel>::iterator it = _channels.begin();
 	while (it != _channels.end())
 	{
-    	if (it->second.isMember(clientFd))
-    	{
-    	    it->second.removeClient(clientFd);
-    	    if (it->second.getClients().empty())
-        		_channels.erase(it++);
+		if (it->second.isMember(clientFd))
+		{
+			it->second.removeClient(clientFd);
+			if (it->second.getClients().empty())
+				_channels.erase(it++);
 			else
 				++it;
 		}
@@ -271,18 +269,12 @@ void Server::handleQuit(Client &client, const std::string &rawMsg, const std::ve
 	(void)rawMsg;
 
 	for (std::map<std::string, Channel>::iterator it = _channels.begin(); it != _channels.end(); ++it)
-	{
 		if (it->second.isMember(client.getFd()))
 			currentChannels.push_back(it->second);
-	}
 	for (std::vector<Channel>::iterator it = currentChannels.begin(); it != currentChannels.end(); ++it)
-	{
 		mutualClients.insert(it->getClients().begin(), it->getClients().end());
-	}
 	for (std::set<int>::iterator it = mutualClients.begin(); it != mutualClients.end(); ++it)
-	{
 		sendMessage(*it, ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHost() + " QUIT " + ":" + (tokens.size() > 1 ? tokens[1] : "Client quit"));
-	}
 	removeClient(client.getFd());
 }
 
