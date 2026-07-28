@@ -26,10 +26,16 @@ Server::~Server() {
     close(_serverSocketFd);
 }
 
-void Server::processClientBuffer(Client &client)
+bool  isCommandRequiresRegistration(std::string command)
 {
-	std::string &buf = client.getInputBuffer();
-	size_t pos;
+  if (command == "MODE" || command == "PRIVMSG" || command == "KICK" || command == "TOPIC" || command == "PART" || command == "INVITE" || command == "JOIN")
+    return true;
+  return false;
+}
+
+void Server::processClientBuffer(Client &client) {
+  std::string &buf = client.getInputBuffer();
+  size_t pos;
 
   while ((pos = buf.find("\r\n")) != std::string::npos) {
     std::string message = buf.substr(0, pos);
@@ -37,14 +43,19 @@ void Server::processClientBuffer(Client &client)
     std::vector<std::string> split_msg = split(message);
     std::cout << "Received command: " << message << std::endl;
     if (!split_msg.empty()) {
-      std::map<std::string, CommandHandler>::iterator it =
-          _cmdMap.find(split_msg[0]);
-      if (it != _cmdMap.end())
+      std::map<std::string, CommandHandler>::iterator it = _cmdMap.find(split_msg[0]);
+      if (!client.getIsRegistered() && isCommandRequiresRegistration(split_msg[0]))
+        sendMessage(
+            client.getFd(),
+            ":" + _serverName + " " + ERR_NOTREGISTERED + " " +
+                (client.getNickname().empty() ? "*" : client.getNickname()) +
+                " :You have not registered");
+      else if (it != _cmdMap.end())
         (this->*(it->second))(client, message, split_msg);
       else
         sendMessage(
             client.getFd(),
-            ERR_UNKNOWNCOMMAND + " " +
+            ":" + _serverName + " " + ERR_UNKNOWNCOMMAND + " " +
                 (client.getNickname().empty() ? "*" : client.getNickname()) +
                 " " + split_msg[0] + " :Unknown command");
     }
@@ -56,52 +67,88 @@ void Server::processClientBuffer(Client &client)
   }
 }
 
-void Server::removeClient(int clientFd)
-{
-	std::map<std::string, Channel>::iterator it = _channels.begin();
-	while (it != _channels.end())
-	{
-		if (it->second.isMember(clientFd))
-		{
-			it->second.removeClient(clientFd);
-			if (it->second.getClients().empty())
-				_channels.erase(it++);
-			else
-				++it;
-		}
-		else
-			++it;
-	}
-	close(clientFd);
-	_clients.erase(clientFd);
-	for (size_t i = 0; i < _pollFds.size(); i++)
-	{
-		if (_pollFds[i].fd == clientFd)
-		{
-			_pollFds.erase(_pollFds.begin() + i);
-			break;
-		}
-	}
+void Server::removeClient(int clientFd) {
+  std::map<std::string, Channel>::iterator it = _channels.begin();
+  while (it != _channels.end()) {
+    if (it->second.isMember(clientFd)) {
+      it->second.removeClient(clientFd);
+      if (it->second.getClients().empty())
+        _channels.erase(it++);
+      else
+        ++it;
+    } else
+      ++it;
+  }
+  close(clientFd);
+  _clients.erase(clientFd);
+  for (size_t i = 0; i < _pollFds.size(); i++) {
+    if (_pollFds[i].fd == clientFd) {
+      _pollFds.erase(_pollFds.begin() + i);
+      break;
+    }
+  }
 }
 
-void Server::handlePass(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
-{
-	std::string res;
+void Server::sendMessage(int clientFd, const std::string &message) {
+  std::string formatted = message + "\r\n";
+  ssize_t bytes_send;
 
-  (void)rawMsg;
-  if (tokens.size() < 2) {
-    sendError(client, "PASS", ERR_NEEDMOREPARAMS);
+  bytes_send = send(clientFd, formatted.c_str(), formatted.size(), 0);
+  if (bytes_send < 0)
+    std::cerr << "Send failed to client fd: " << clientFd << std::endl;
+}
+
+void Server::sendWelcomeMessage(Client &client) {
+  sendMessage(client.getFd(),
+              ":" + _serverName + " " + RPL_WELCOME + " " +
+                  client.getNickname() + " :Welcome to our IRC network " +
+                  client.getNickname() + "!" + client.getUsername() + "@" +
+                  client.getHost());
+  sendMessage(client.getFd(), ":" + _serverName + " " + RPL_YOURHOST + " " +
+                                  client.getNickname() + " :Your host is " +
+                                  _serverName + ", running version " +
+                                  _version);
+  sendMessage(client.getFd(), ":" + _serverName + " " + RPL_CREATED + " " +
+                                  client.getNickname() +
+                                  " :This server was created at " +
+                                  _creationDate);
+  sendMessage(client.getFd(), ":" + _serverName + " " + RPL_MYINFO + " " +
+                                  client.getNickname() + " " + _serverName +
+                                  " " + _version + " o o");
+}
+
+void Server::broadcastToChannel(const std::string &channelName,
+                                const std::string &message, int excludeFd) {
+  std::map<std::string, Channel>::iterator it = _channels.find(channelName);
+
+  if (it == _channels.end())
     return;
-  }
-  res = authPass(client, tokens[1], _password);
-  if (!res.empty() && res.compare(RPL_SUCCESS) != 0) {
-    sendError(client, "PASS", res);
-    if (res.compare(ERR_PASSWDMISMATCH) == 0)
-      removeClient(client.getFd());
+  const std::set<int> &clients = it->second.getClients();
+  for (std::set<int>::const_iterator index = clients.begin();
+       index != clients.end(); ++index) {
+    if (*index == excludeFd)
+      continue;
+    sendMessage(*index, message);
   }
 }
 
-void Server::handleNick(Client &client, const std::string &rawMsg,
+void Server::sendError(Client &client, const std::string &command,
+                       const std::string &errorCode,
+                       const std::string &extra = "") {
+  std::map<std::string, std::string>::iterator it =
+      _errorDescriptions.find(errorCode);
+  if (it != _errorDescriptions.end())
+    sendMessage(client.getFd(),
+                ":" + _serverName + " " +
+                    (errorCode == "900" || errorCode == "901" ||
+                             errorCode == "902" || errorCode == "903"
+                         ? ERR_NEEDMOREPARAMS
+                         : errorCode) +
+                    " " + command + " " + extra + (extra.empty() ? "" : " ") +
+                    it->second);
+}
+
+void Server::handlePass(Client &client, const std::string &rawMsg,
                         const std::vector<std::string> &tokens) {
   std::string res;
 
