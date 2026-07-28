@@ -60,7 +60,7 @@ class Server
 	void handlePart(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void handlePrivmsg(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens);
 	void sendJoinMessage(Client &client, Channel &channel);
-	void sendError(Client &client, const std::string &command, const std::string &errorCode, const std::string &extra);
+	void sendError(Client &client, const std::string &command, const std::string &errorCode, const std::string &extra = "");
 	std::string showClientsInChannel(Channel &channel);
 	std::string showChannelModes(Channel &channel);
 
