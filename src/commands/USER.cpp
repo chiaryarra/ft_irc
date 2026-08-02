@@ -6,6 +6,7 @@
 bool	parseUsername(std::string username, Client &client)
 {
 	size_t	found;
+	(void)client;
 
 	if (username.empty() || username.size() > 32)
 		return (false);
@@ -17,6 +18,7 @@ bool	parseUsername(std::string username, Client &client)
 
 bool	parseRealName(std::string realname, Client &client)
 {
+	(void)client;
 	if (realname.find_first_of("\r\n\0") != std::string::npos)
 		return (false);
 	client.setRealname(realname);
