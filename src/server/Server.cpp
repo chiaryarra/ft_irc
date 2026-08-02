@@ -244,9 +244,9 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 void Server::handleCap(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	(void)rawMsg;
-	(void)tokens;
-	(void)client;
-	return;
+	if (tokens.size() < 2 || tokens[1] != "LS")
+		return;
+	sendMessage(client.getFd(), ":" + _serverName + " CAP " + (client.getNickname().empty() ? "*" : client.getNickname()) + " LS :");
 }
 
 void Server::handlePing(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
