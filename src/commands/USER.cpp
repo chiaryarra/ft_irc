@@ -8,27 +8,17 @@ bool	parseUsername(std::string username, Client &client)
 	size_t	found;
 
 	if (username.empty() || username.size() > 32)
-	{
-		std::cout << "Username empty or too large. Client FD: " << client.getFd() << std::endl;
 		return (false);
-	}
 	found = username.find_first_of(" @!:\r\n\0"); 
 	if (found != std::string::npos)
-	{
-		std::cout << "Character " << username[found] << " is forbidden. Client FD:" << client.getFd() << std::endl;
 		return false;
-	}
-	std::cout << "username accepted -> " << username << ". Client FD: " << client.getFd() << std::endl;
 	return (true);
 }
 
 bool	parseRealName(std::string realname, Client &client)
 {
 	if (realname.find_first_of("\r\n\0") != std::string::npos)
-	{
-		std::cout << "Invalid real name. Client FD: " << client.getFd() << std::endl;	
 		return (false);
-	}
 	client.setRealname(realname);
 	return (true);
 }
@@ -48,7 +38,6 @@ std::string	setClientUsername(std::vector<std::string> split_msg, Client &client
 			case 2:
 				if (it->compare("0") != 0)
 				{
-					std::cout << "Invalid mode " << *it << std::endl;
 					client.setUsername("");					
 					return (ERR_INVALIDMODE);
 				}
@@ -56,7 +45,6 @@ std::string	setClientUsername(std::vector<std::string> split_msg, Client &client
 			case 3:
 				if (it->compare("*") != 0)
 				{
-					std::cout << "This unused " << *it << " is invalid" << std::endl;	
 					client.setUsername("");					
 					return (ERR_INVALIDUNUSED);
 				}
