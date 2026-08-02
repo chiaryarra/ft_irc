@@ -45,7 +45,6 @@ void Server::processClientBuffer(Client &client)
 		std::string message = buf.substr(0, pos);
 		buf.erase(0, pos + 2);
 		std::vector<std::string> split_msg = split(message);
-		std::cout << "Received command: " << message << std::endl;
 		if (!split_msg.empty())
 		{
 			std::map<std::string, CommandHandler>::iterator it = _cmdMap.find(split_msg[0]);
@@ -246,7 +245,7 @@ void Server::handleCap(Client &client, const std::string &rawMsg, const std::vec
 {
 	(void)rawMsg;
 	(void)tokens;
-	std::cout << "Ignoring CAP command from FD: " << client.getFd() << std::endl;
+	(void)client;
 	return;
 }
 

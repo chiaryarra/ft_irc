@@ -99,8 +99,6 @@ void Server::handleNewConnection()
 		clientPollFd.events = POLLIN;
 		clientPollFd.revents = 0;
 		_pollFds.push_back(clientPollFd);
-
-		std::cout << "New client Connected: FD " << clientFd << std::endl;
 	}
 }
 
@@ -113,7 +111,6 @@ void Server::handleClientData(int clientFd)
 		buffer[bytes] = '\0';
 	else if (bytes == 0)
 	{
-		std::cout << "Client disconnected\n";
 		removeClient(clientFd);
 		return;
 	}

@@ -60,7 +60,6 @@ std::string Server::showClientsInChannel(Channel &channel)
 		if (op_it != channel.getOperators().end())
 			names += "@";
 
-		std::cout << client_it->second.getNickname();
 		names += client_it->second.getNickname();
 		if (next_it != channel.getClients().end())
 			names += " ";
