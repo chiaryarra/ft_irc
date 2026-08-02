@@ -45,7 +45,6 @@ void Server::processClientBuffer(Client &client)
 		std::string message = buf.substr(0, pos);
 		buf.erase(0, pos + 2);
 		std::vector<std::string> split_msg = split(message);
-		std::cout << "Received command: " << message << std::endl;
 		if (!split_msg.empty())
 		{
 			std::map<std::string, CommandHandler>::iterator it = _cmdMap.find(split_msg[0]);
@@ -245,9 +244,9 @@ void Server::handleJoin(Client &client, const std::string &rawMsg, const std::ve
 void Server::handleCap(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
 {
 	(void)rawMsg;
-	(void)tokens;
-	std::cout << "Ignoring CAP command from FD: " << client.getFd() << std::endl;
-	return;
+	if (tokens.size() < 2 || tokens[1] != "LS")
+		return;
+	sendMessage(client.getFd(), ":" + _serverName + " CAP " + (client.getNickname().empty() ? "*" : client.getNickname()) + " LS :");
 }
 
 void Server::handlePing(Client &client, const std::string &rawMsg, const std::vector<std::string> &tokens)
